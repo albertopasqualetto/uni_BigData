@@ -66,5 +66,18 @@ def roundC(cells, M):
     pass
 
 
+def plot_points(points_list, D):
+    from matplotlib import pyplot as plt
+    fig, ax = plt.subplots()
+    for p in points_list:
+        ax.add_patch(plt.Circle(p, D, color='k', fill=False))
+    x = [p[0] for p in points_list]
+    y = [p[1] for p in points_list]
+    plt.scatter(x, y)
+    for i in range(len(points_list)):
+        plt.annotate(str(i), (x[i], y[i]))
+    plt.show()
+
+
 if __name__ == "__main__":
     main()
