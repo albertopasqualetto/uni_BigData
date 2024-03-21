@@ -8,12 +8,12 @@ sc = SparkContext(conf=conf)
 
 def main():
     argc = len(sys.argv)
-    if argc != 5:
+    if argc != 6:
         print('Usage: python G007HW1.py <file_name> <D> <M> <K> <L>')
         exit(1)
     file_name = sys.argv[1]
-    D = float(sys.argv[2])
-    M = int(sys.argv[3])
+    D = float(sys.argv[2])  # radius
+    M = int(sys.argv[3])    # threshold for outliers
     K = int(sys.argv[4])
     L = int(sys.argv[5])
     points = sc.textFile(file_name)\
@@ -26,12 +26,9 @@ def main():
     if num < 200000:
         print('ExactOutliers')
         ExactOutliers(points, D)
-        print('ApproxOutliers')
-        ApproxOutliers(points, D)
-    else:
-        print('ApproxOutliers')
-        ApproxOutliers(points)
-    pass
+    print('ApproxOutliers')
+    ApproxOutliers(points, D)
+
 
 
 def ExactOutliers(points, M, D):
