@@ -1,9 +1,11 @@
 from pyspark import SparkContext, SparkConf
 import sys
 
+conf = SparkConf().setAppName('G007HW1')
+sc = SparkContext(conf=conf)
+
+
 def main():
-    conf = SparkConf().setAppName('G007HW1')
-    sc = SparkContext(conf=conf)
     argc = len(sys.argv)
     if argc != 5:
         print('Usage: python G007HW1.py <file_name> <D> <M> <K> <L>')
@@ -30,19 +32,39 @@ def main():
         ApproxOutliers(points)
     pass
 
+
 def ExactOutliers(points, D):
     pointsList = points.collect()
     # TODO: Implement the exact algorithm for finding outliers
     return pointsList
 
-def ApproxOutliers(points, D):
-    points = round1(points, D)
-    #TODO: Implement the other rounds of the approximate algorithm
-    return points
 
-def round1(points, D):
-    return points.flatmap(lambda x,y : ((int(x/D), int(y/D)),1)).reduceByKey(lambda x, y: x+y)
-    
+def ApproxOutliers(points, D, M):
+    points_per_cell = roundA(points, D)
+    points_square_3 = roundB_3(points_per_cell)
+    points_square_7 = roundB_7(points_per_cell)
+    u = sc.union([points_per_cell, points_square_3, points_square_7])
+    u = u.groupByKey()
+    outliers = roundC(u, M).collect()
+
+    return outliers
+
+
+def roundA(points, D):
+    return points.flatmap(lambda x, y: ((int(x/D), int(y/D)), 1)).reduceByKey(lambda x, y: x+y) # count the number of points in each cell
+
+
+def roundB_3(points_per_cell):
+    pass
+
+
+def roundB_7(points_per_cell):
+    pass
+
+
+def roundC(cells, M):
+    pass
+
 
 if __name__ == "__main__":
     main()
