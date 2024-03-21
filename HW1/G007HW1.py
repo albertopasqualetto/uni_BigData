@@ -62,7 +62,7 @@ def ApproxOutliers(points, D, M):
 
 
 def roundA(points, D):
-    return points.flatmap(lambda x, y: ((int(x/D), int(y/D)), 1)).reduceByKey(lambda x, y: x+y) # count the number of points in each cell
+    return points.flatmap(lambda x: ((int(x[0]/D), int(x[1]/D)), 1)).reduceByKey(lambda val1, val2: val1+val2) # count the number of points in each cell
 
 
 def roundB_3(points_per_cell):
@@ -73,8 +73,18 @@ def roundB_7(points_per_cell):
     pass
 
 
-def roundC(cells, M):
-    pass
+def roundC(cells, M): #return for each cell the number of outliers, non-outliers, and uncertain points
+    return cells.flatMap(lambda cell : mapRoundC(cell, M)).groupByKey().mapValues(lambda vals: sum(vals))
+
+def mapRoundC(cell, M):
+    N3 = cell[2]
+    N7 = cell[3]
+    if N3 >= M: #surely non-outliers
+        return [(2, cell[4])]
+    elif N7 <= M: #surely outliers
+        return [(0, cell[4])]
+    elif N3 <=M and N7 >= M: #uncertain
+        return [(1, cell[4])]
 
 
 def plot_points(points_list, D):
