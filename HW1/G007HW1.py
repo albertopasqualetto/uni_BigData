@@ -64,8 +64,8 @@ def roundA(points, D):
 def cell_mapping(cell, square_dim): 
     squares = []
     #range: from -1 to 1 if square_dim = 3, from  -3 to 3 if square_dim = 7
-    for i in range(-int(square_dim/2), int(square_dim/2)): 
-        for j in range (-int(square_dim/2), int(square_dim/2)):
+    for i in range(-int(square_dim/2), int(square_dim/2) + 1): 
+        for j in range (-int(square_dim/2), int(square_dim/2) + 1):
             if(i == 0 and j == 0): #if the current cell is the center
                 squares.append((cell[0] + i, cell[1] + j), (cell[2], 1)) #((q_x, q_y), (|L_j|, 1))
             else:
