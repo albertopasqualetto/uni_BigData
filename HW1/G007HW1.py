@@ -9,7 +9,7 @@ def main():
         print('Usage: python G007HW1.py <file_name> <D> <M> <K> <L>')
         exit(1)
     file_name = sys.argv[1]
-    D = int(sys.argv[2])
+    D = float(sys.argv[2])
     M = int(sys.argv[3])
     K = int(sys.argv[4])
     L = int(sys.argv[5])
@@ -41,7 +41,7 @@ def ApproxOutliers(points, D):
     return points
 
 def round1(points, D):
-    return points.flatmap(lambda x,y : ((x/D,y/D),1)).reduceByKey(lambda x,y : x+y)  
+    return points.flatmap(lambda x,y : ((int(x/D), int(y/D)),1)).reduceByKey(lambda x, y: x+y)
     
 
 if __name__ == "__main__":
