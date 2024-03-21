@@ -1,5 +1,6 @@
 from pyspark import SparkContext, SparkConf
 import sys
+from scipy.spatial import distance_matrix
 
 conf = SparkConf().setAppName('G007HW1')
 sc = SparkContext(conf=conf)
@@ -33,10 +34,20 @@ def main():
     pass
 
 
-def ExactOutliers(points, D):
-    pointsList = points.collect()
-    # TODO: Implement the exact algorithm for finding outliers
-    return pointsList
+def ExactOutliers(points, M, D):
+    points_list = points.collect()
+    # print(points_list)
+
+    dist_mat = distance_matrix(points_list, points_list)    # TODO maybe this should be implemented manually
+    # print(dist_mat)
+
+    outliers = []   # list of indexes of outliers
+    for i, point in enumerate(dist_mat):
+        if len(point[point < D]) <= M:
+            outliers.append(i)
+    # print(len(outliers))
+    # print(outliers)
+    return len(outliers)
 
 
 def ApproxOutliers(points, D, M):
