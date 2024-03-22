@@ -25,9 +25,9 @@ def main():
     print(points.collect())
     if num < 200000:
         print('ExactOutliers')
-        ExactOutliers(points, D)
+        ExactOutliers(points, M, D)
     print('ApproxOutliers')
-    ApproxOutliers(points, D)
+    ApproxOutliers(points, M, D)
 
 
 
@@ -47,7 +47,7 @@ def ExactOutliers(points, M, D):
     return len(outliers)
 
 
-def ApproxOutliers(points, D, M):
+def ApproxOutliers(points, M, D):
     points_per_cell = roundA(points, D)
     points_square_3 = roundB_3(points_per_cell)
     points_square_7 = roundB_7(points_per_cell)
@@ -59,7 +59,7 @@ def ApproxOutliers(points, D, M):
 
 
 def roundA(points, D):
-    return points.flatmap(lambda x: ((int(x[0]/D), int(x[1]/D)), 1)).reduceByKey(lambda val1, val2: val1+val2) # count the number of points in each cell
+    return points.flatMap(lambda x: ((int(x[0]/D), int(x[1]/D)), 1)).reduceByKey(lambda val1, val2: val1+val2) # count the number of points in each cell
     
 def cell_mapping(cell, square_dim): 
     squares = []
@@ -82,10 +82,10 @@ def square_reduce(square):
         return points_count
 
 def roundB_3(points_per_cell):
-    return points_per_cell.flatmap(lambda cell: cell_mapping(cell, 3)).reduceByKey(square_reduce)
+    return points_per_cell.flatMap(lambda cell: cell_mapping(cell, 3)).reduceByKey(square_reduce)
 
 def roundB_7(points_per_cell):
-    return points_per_cell.flatmap(lambda cell: cell_mapping(cell, 7)).reduceByKey(square_reduce)
+    return points_per_cell.flatMap(lambda cell: cell_mapping(cell, 7)).reduceByKey(square_reduce)
 
 
 def roundC(cells, M): #return for each cell the number of outliers, non-outliers, and uncertain points
