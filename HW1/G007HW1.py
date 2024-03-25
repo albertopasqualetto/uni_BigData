@@ -25,14 +25,14 @@ def main():
     print(num)
     print(points.collect())
     if num < 200000:
-        #plot_points(points.collect(), D)
         print('ExactOutliers')
         outliers = ExactOutliers(points, M, D)
-        print('Number of outliers: ', len(outliers))
-        print('Outliers: ', [outliers[i] for i in range(0,min(K,len(outliers)))])
+        print('\tNumber of outliers: ', len(outliers))
+        print('\tOutliers: ', [outliers[i] for i in range(0,min(K,len(outliers)))])
     print('ApproxOutliers')
     result = ApproxOutliers(points, M, D)
     print(result)
+    plot_points(points.collect(), D)
 
 
 
@@ -60,7 +60,7 @@ def ApproxOutliers(points, M, D):
     #print(points_square_3.collect())
     print('------------------------')
     points_square_7 = roundB_7(points_per_cell)
-    print(points_square_7.collect())
+    # print("points square 7:", points_square_7.collect())
     print('------------------------')
     u = sc.union([points_square_3, points_square_7, points_per_cell])
     u = u.groupByKey().map(lambda x: (x[0], list(x[1])))
@@ -82,9 +82,12 @@ def roundC(cells, M): #return for each cell the number of outliers, non-outliers
     return cells.mapPartitions(lambda cells : mapRoundC(cells, M)).groupByKey().flatMap(reduceRoundC)
 
 def mapRoundA(points, D):
+    SIDE = D/(2*(2**0.5))
+    print("SIDE", SIDE)
     val = []
-    for point in points:
-        val.append(((int(point[0]/(D/2*(2**0.5))),int(point[1]/(D/2*(2**0.5)))), 1))
+    for i, point in enumerate(points):
+        print(f"point {i} ({point[0]}, {point[1]}) in square:", (int(point[0]/SIDE),int(point[1]/SIDE)))
+        val.append(((int(point[0]/SIDE),int(point[1]/SIDE)), 1))
     return val
 
 def cell_mapping(cells, square_dim):
@@ -113,7 +116,7 @@ def mapRoundC(cells, M):
     # cell = [key,[(points_count3, center_count3), (points_count7, center_count7), points_count]]
     val = []
     for cell in cells:
-        print(cell)
+        print("mapRoundC cell", cell, "CENTER" if cell[1][0][1] != 0 else " ")
         if cell[1][0][1] != 0:
             N3 = cell[1][0][0]
             N7 = cell[1][1][0]
