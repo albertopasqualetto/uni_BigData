@@ -104,6 +104,7 @@ def mapRoundC(cell, M):
 
 def plot_points(points_list, D):
     from matplotlib import pyplot as plt
+    import numpy as np
     fig, ax = plt.subplots()
     for p in points_list:
         ax.add_patch(plt.Circle(p, D, color='k', fill=False))
@@ -112,6 +113,10 @@ def plot_points(points_list, D):
     plt.scatter(x, y)
     for i in range(len(points_list)):
         plt.annotate(str(i), (x[i], y[i]))
+    SIDE = D/(2*(2**0.5))
+    ax.set_xticks(np.arange(0, max(x)+SIDE, SIDE))
+    ax.set_yticks(np.arange(0, max(y)+SIDE, SIDE))
+    ax.grid(which='both')
     plt.show()
 
 
