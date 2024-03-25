@@ -4,7 +4,7 @@ from scipy.spatial import distance_matrix
 
 conf = SparkConf().setAppName('G007HW1')
 sc = SparkContext(conf=conf)
-#sc.setLogLevel("DEBUG")
+# sc.setLogLevel("DEBUG")
 
 
 def main():
@@ -28,19 +28,18 @@ def main():
         print('ExactOutliers')
         outliers = ExactOutliers(points, M, D)
         print('\tNumber of outliers: ', len(outliers))
-        print('\tOutliers: ', [outliers[i] for i in range(0,min(K,len(outliers)))])
+        print('\tOutliers: ', [outliers[i] for i in range(0, min(K, len(outliers)))])
     print('ApproxOutliers')
     result = ApproxOutliers(points, M, D)
     print(result)
     plot_points(points.collect(), D)
 
 
-
 def ExactOutliers(points, M, D):
     points_list = points.collect()
     # print(points_list)
 
-    dist_mat = distance_matrix(points_list, points_list)    # TODO maybe this should be implemented manually
+    dist_mat = distance_matrix(points_list, points_list)
     # print(dist_mat)
 
     outliers = []   # list of indexes of outliers
@@ -54,65 +53,75 @@ def ExactOutliers(points, M, D):
 
 def ApproxOutliers(points, M, D):
     points_per_cell = roundA(points, D)
-    #print(points_per_cell.collect())
-    print('------------------------')
     points_square_3 = roundB_3(points_per_cell)
-    #print(points_square_3.collect())
-    print('------------------------')
     points_square_7 = roundB_7(points_per_cell)
-    # print("points square 7:", points_square_7.collect())
-    print('------------------------')
     u = sc.union([points_square_3, points_square_7, points_per_cell])
-    u = u.groupByKey().map(lambda x: (x[0], list(x[1])))
-    #print(u.collect())
+    u = u.groupByKey()\
+                    .map(lambda x: (x[0], list(x[1])))
+    # print(u.collect())
     outliers = roundC(u, M)
     return outliers.collect()
 
 
 def roundA(points, D):
-    return points.mapPartitions(lambda points: mapRoundA(points, D)).reduceByKey(lambda val1, val2: val1+val2) # count the number of points in each cell
+    return points\
+                .mapPartitions(lambda pts: map_roundA(pts, D))\
+                .reduceByKey(lambda val1, val2: val1+val2)  # count the number of points in each cell
+
 
 def roundB_3(points_per_cell):
-    return points_per_cell.mapPartitions(lambda cells: cell_mapping(cells, 3)).reduceByKey(square_reduce)
+    return points_per_cell\
+                        .mapPartitions(lambda cs: cell_mapping(cs, 3))\
+                        .reduceByKey(square_reduce)
+
 
 def roundB_7(points_per_cell):
-    return points_per_cell.mapPartitions(lambda cells: cell_mapping(cells, 7)).reduceByKey(square_reduce)
+    return points_per_cell\
+                        .mapPartitions(lambda cs: cell_mapping(cs, 7))\
+                        .reduceByKey(square_reduce)
 
-def roundC(cells, M): #return for each cell the number of outliers, non-outliers, and uncertain points
-    return cells.mapPartitions(lambda cells : mapRoundC(cells, M)).groupByKey().flatMap(reduceRoundC)
 
-def mapRoundA(points, D):
+def roundC(cells, M):   # return for each cell the number of outliers, non-outliers, and uncertain points
+    return cells\
+                .mapPartitions(lambda cs: map_roundC(cs, M))\
+                .groupByKey()\
+                .flatMap(reduce_roundC)
+
+
+def map_roundA(points, D):
     SIDE = D/(2*(2**0.5))
-    print("SIDE", SIDE)
+    # print("SIDE", SIDE)
     val = []
     for i, point in enumerate(points):
-        print(f"point {i} ({point[0]}, {point[1]}) in square:", (int(point[0]/SIDE),int(point[1]/SIDE)))
+        # print(f"point {i} ({point[0]}, {point[1]}) in square:", (int(point[0]/SIDE),int(point[1]/SIDE)))
         val.append(((int(point[0]/SIDE),int(point[1]/SIDE)), 1))
     return val
 
+
 def cell_mapping(cells, square_dim):
-    squaresCells = []
+    squares_cells = []
     for cell in cells:
-        #range: from -1 to 1 if square_dim = 3, from  -3 to 3 if square_dim = 7
-        for i in range(-int(square_dim/2), int(square_dim/2) + 1): 
-            for j in range (-int(square_dim/2), int(square_dim/2) + 1):
-                if(i == 0 and j == 0): #if the current cell is the center
-                    squaresCells.append(((cell[0][0], cell[0][1]), (cell[1], 1))) #((q_x, q_y), (|L_j|, 1))
+        # range: from -1 to 1 if square_dim = 3; from -3 to 3 if square_dim = 7
+        for i in range(-int(square_dim/2), int(square_dim/2) + 1):
+            for j in range(-int(square_dim/2), int(square_dim/2) + 1):
+                if i == 0 and j == 0:  # if the current cell is the center
+                    squares_cells.append(((cell[0][0], cell[0][1]), (cell[1], 1)))   # ((q_x, q_y), (|L_j|, 1))
                 else:
-                    squaresCells.append(((cell[0][0]+i, cell[0][1]+j), (cell[1], 0))) #((q_x, q_y), (|L_j|, 0))
-    #print(squaresCells)
-    return squaresCells
+                    squares_cells.append(((cell[0][0]+i, cell[0][1]+j), (cell[1], 0)))   # ((q_x, q_y), (|L_j|, 0))
+    # print(squares_cells)
+    return squares_cells
+
 
 def square_reduce(square1, square2):
     # square = [key, (points_count, 0/1)] but without the key
+    points_count = 0    # count of the points in the square
     center_count = 0
-    points_count = 0 #count of the points in the square
-    points_count += (square1[0] + square2[0]) #update the points count
-    center_count += (square1[1] + square2[1]) #if there is a center 1 is added   
-    #if center_count != 0: #if the center cell has at least one point
-    return (points_count, center_count) #return the key of the cell and the number of points in the square and the number of points in the center cell
+    points_count += (square1[0] + square2[0])   # update the points count
+    center_count += (square1[1] + square2[1])   # if there is a center 1 is added
+    return (points_count, center_count) # return the number of points in the square and the number of points in the square's center cell
 
-def mapRoundC(cells, M):
+
+def map_roundC(cells, M):
     # cell = [key,[(points_count3, center_count3), (points_count7, center_count7), points_count]]
     val = []
     for cell in cells:
@@ -120,24 +129,25 @@ def mapRoundC(cells, M):
         if cell[1][0][1] != 0:
             N3 = cell[1][0][0]
             N7 = cell[1][1][0]
-            if N3 >= M: #surely non-outliers
+            if N3 >= M: # surely non-outliers
                 val.append(('non_outliers', (cell[0], cell[1][2])))
-            elif N7 <= M: #surely outliers
+            elif N7 <= M:   # surely outliers
                 val.append(("outliers", (cell[0], cell[1][2])))
-            elif N3 <=M and N7 >= M: #uncertain
+            elif N3 <= M <= N7:    # uncertain
                 val.append(("uncertain", (cell[0], cell[1][2])))
     return val
 
-def reduceRoundC(cells):
-    # cells =[0, [(key1,points1),(key2,points2)...]
+
+def reduce_roundC(cells):
+    # cells = [0/1/2, [(key1,points1), (key2,points2), ...]]
     # cell = [0/1/2, (key, points_count)]
-    listSquare = []
-    x = list(cells[1])
-    numberOfPoints = 0
-    for cell in x:
-        numberOfPoints += cell[1]
-        listSquare.append(cell[0])
-    return (cells[0], (listSquare, numberOfPoints))
+    list_square = []
+    number_of_points = 0
+    for cell in cells[1]:
+        list_square.append(cell[0])
+        number_of_points += cell[1]
+    return (cells[0], (list_square, number_of_points))
+
 
 def plot_points(points_list, D):
     from matplotlib import pyplot as plt
