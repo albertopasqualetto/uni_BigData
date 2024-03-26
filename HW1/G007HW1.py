@@ -5,7 +5,7 @@ from scipy.spatial import distance_matrix
 
 conf = SparkConf().setAppName('G007HW1')
 sc = SparkContext(conf=conf)
-# sc.setLogLevel("DEBUG")
+sc.setLogLevel("WARN")
 
 
 def main():
