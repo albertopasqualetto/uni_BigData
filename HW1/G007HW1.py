@@ -37,7 +37,6 @@ def main():
             print(f"Point: ({outliers[i][0]},{outliers[i][1]})")
         print("Running time of ExactOutliers =", (end_time_ns-start_time_ns)/(10**6), "ms")
     # Approximate method
-    # print('ApproxOutliers')
     start_time_ns = time.time_ns()
     (points_per_cell, approx_out) = ApproxOutliers(points, M, D)
     end_time_ns = time.time_ns()
