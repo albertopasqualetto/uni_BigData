@@ -1,5 +1,6 @@
 from pyspark import SparkContext, SparkConf
 import sys
+import time
 from scipy.spatial import distance_matrix
 
 conf = SparkConf().setAppName('G007HW1')
@@ -24,36 +25,58 @@ def main():
                                     .cache()
     num = points.count()
     print("Number of points =", num)
-    print(points.collect())
-    if num < 200000:
-        print('ExactOutliers')
-        outliers = ExactOutliers(points, M, D)
-        print('Number of outliers = ', len(outliers))
-        print('\tOutliers: ', [outliers[i] for i in range(0, min(K, len(outliers)))])
-    print('ApproxOutliers')
-    result = ApproxOutliers(points, M, D)
-    print(result)
-    plot_points(points.collect(), D)
+    # print(points.collect())
+    if num < 200000:    # Exact method
+        points_list = points.collect()
+        start_time_ns = time.time_ns()
+        outliers = ExactOutliers(points_list, M, D)
+        end_time_ns = time.time_ns()
+        # print(outliers)
+        print('Number of Outliers = ', len(outliers))
+        for i in range(0, min(K, len(outliers))):
+            print(f"Point: ({outliers[i][0]},{outliers[i][1]})")
+        print("Running time of ExactOutliers =", (end_time_ns-start_time_ns)/(10**6), "ms")
+    # Approximate method
+    # print('ApproxOutliers')
+    start_time_ns = time.time_ns()
+    (points_per_cell, approx_out) = ApproxOutliers(points, M, D)
+    end_time_ns = time.time_ns()
+    results = {}
+    for certainty, v in zip(approx_out[0:-1:2], approx_out[1::2]):
+        results[certainty] = v
+    # print(results)
+
+    print("Number of sure outliers =", results['outliers'][1] if 'outliers' in results.keys() else 0)
+    print("Number of uncertain points =", results['uncertain'][1] if 'uncertain' in results.keys() else 0)
+
+    first_K_nonempty = points_per_cell.takeOrdered(K, lambda x: x[1])
+    for i in range(0, len(first_K_nonempty)):
+        print(f"Cell: ({first_K_nonempty[i][0][0]},{first_K_nonempty[i][0][1]})  Size = {first_K_nonempty[i][1]}")
+
+    print("Running time of ApproxOutliers =", (end_time_ns-start_time_ns)/(10**6), "ms")
+
+    # plot_points(points.collect(), D)
 
 
-def ExactOutliers(points, M, D):
-    points_list = points.collect()
+def ExactOutliers(points_list, M, D):
     # print(points_list)
 
     dist_mat = distance_matrix(points_list, points_list)
     # print(dist_mat)
 
-    outliers = []   # list of indexes of outliers
+    outliers = {}   # list of indexes of outliers
     for i, point in enumerate(dist_mat):
-        if len(point[point < D]) <= M:
-            outliers.append(i)
+        points_in_ball = point[point < D]
+        if len(points_in_ball) <= M:
+            outliers[i] = len(points_in_ball)
     # print(len(outliers))
     # print(outliers)
+    outliers = [points_list[k] for k, v in sorted(outliers.items(), key=lambda item: item[1])]
     return outliers
 
 
 def ApproxOutliers(points, M, D):
-    points_per_cell = roundA(points, D)
+    points_per_cell = roundA(points, D).cache()
     points_square_3 = roundB_3(points_per_cell)
     points_square_7 = roundB_7(points_per_cell)
     u = sc.union([points_square_3, points_square_7, points_per_cell])
@@ -61,7 +84,7 @@ def ApproxOutliers(points, M, D):
                     .map(lambda x: (x[0], list(x[1])))
     # print(u.collect())
     outliers = roundC(u, M)
-    return outliers.collect()
+    return (points_per_cell, outliers.collect())
 
 
 def roundA(points, D):
@@ -131,7 +154,7 @@ def map_roundC(cells, M):
             N3 = cell[1][0][0]
             N7 = cell[1][1][0]
             if N3 >= M: # surely non-outliers
-                val.append(('non_outliers', (cell[0], cell[1][2])))
+                val.append(("non_outliers", (cell[0], cell[1][2])))
             elif N7 <= M:   # surely outliers
                 val.append(("outliers", (cell[0], cell[1][2])))
             elif N3 <= M <= N7:    # uncertain
