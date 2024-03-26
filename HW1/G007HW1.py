@@ -17,17 +17,18 @@ def main():
     M = int(sys.argv[3])    # threshold for outliers
     K = int(sys.argv[4])
     L = int(sys.argv[5])
+    print(f"{file_name} D={D} M={M} K={K} L={L}")
     points = sc.textFile(file_name)\
                                     .flatMap(lambda s: [tuple(float(x) for x in s.split(','))])\
                                     .repartition(L)\
                                     .cache()
     num = points.count()
-    print(num)
+    print("Number of points =", num)
     print(points.collect())
     if num < 200000:
         print('ExactOutliers')
         outliers = ExactOutliers(points, M, D)
-        print('\tNumber of outliers: ', len(outliers))
+        print('Number of outliers = ', len(outliers))
         print('\tOutliers: ', [outliers[i] for i in range(0, min(K, len(outliers)))])
     print('ApproxOutliers')
     result = ApproxOutliers(points, M, D)
@@ -125,7 +126,7 @@ def map_roundC(cells, M):
     # cell = [key,[(points_count3, center_count3), (points_count7, center_count7), points_count]]
     val = []
     for cell in cells:
-        print("mapRoundC cell", cell, "CENTER" if cell[1][0][1] != 0 else " ")
+        # print("mapRoundC cell", cell, "CENTER" if cell[1][0][1] != 0 else " ")
         if cell[1][0][1] != 0:
             N3 = cell[1][0][0]
             N7 = cell[1][1][0]
