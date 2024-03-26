@@ -153,11 +153,11 @@ def map_roundC(cells, M):
         if cell[1][0][1] != 0:
             N3 = cell[1][0][0]
             N7 = cell[1][1][0]
-            if N3 >= M: # surely non-outliers
+            if N3 > M: # surely non-outliers
                 val.append(("non_outliers", (cell[0], cell[1][2])))
             elif N7 <= M:   # surely outliers
                 val.append(("outliers", (cell[0], cell[1][2])))
-            elif N3 <= M <= N7:    # uncertain
+            elif N3 <= M < N7:    # uncertain
                 val.append(("uncertain", (cell[0], cell[1][2])))
     return val
 
