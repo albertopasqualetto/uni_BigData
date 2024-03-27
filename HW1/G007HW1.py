@@ -18,12 +18,14 @@ def main():
     M = int(sys.argv[3])    # threshold for outliers
     K = int(sys.argv[4])    # number of outliers that will be printed
     L = int(sys.argv[5])    # number of partitions
+
     print(f"{file_name} D={D} M={M} K={K} L={L}")
     # map from file to points
     points = sc.textFile(file_name)\
                                     .flatMap(lambda s: [tuple(float(x) for x in s.split(','))])\
                                     .repartition(L)\
                                     .cache()
+
     num = points.count()
     print("Number of points =", num)
 
@@ -55,17 +57,16 @@ def main():
 
     print("Running time of ApproxOutliers =", (end_time_ns-start_time_ns)/(10**6), "ms")
 
-    if num < 20:
-        plot_points(points.collect(), D)
+    # plot_points(points.collect(), D)
 
 
 def ExactOutliers(points_list, M, D):
-    outliers = {}   
-    #foreach point the distance with all the points (intself and the others) is computed
+    outliers = {}
+    # for each point the distance with all the points (itself and the others) is computed
     for current_point in points_list:
         points_in_ball = 0  
         for point in points_list: 
-            if math.dist(current_point, point) < D : # the point is inside the ball D
+            if math.dist(current_point, point) < D: # the point is inside the ball D
                 points_in_ball += 1
         if points_in_ball <= M : # the current point is an outlier
             outliers[len(outliers)] = current_point
@@ -77,10 +78,12 @@ def ApproxOutliers(points, M, D):
     points_per_cell = roundA(points, D).cache()
     points_square_3 = roundB_3(points_per_cell)
     points_square_7 = roundB_7(points_per_cell)
-    # merge all the result obtained
+
+    # merge all the obtained results
     u = sc.union([points_square_3, points_square_7, points_per_cell])
     u = u.groupByKey()\
                     .map(lambda x: (x[0], list(x[1])))
+
     outliers = roundC(u, M)
     return (points_per_cell, outliers.collect())
 
@@ -89,7 +92,8 @@ def ApproxOutliers(points, M, D):
 def roundA(points, D):
     return points\
                 .mapPartitions(lambda pts: map_roundA(pts, D))\
-                .reduceByKey(lambda val1, val2: val1+val2) # counts the number of points of each cell
+                .reduceByKey(lambda val1, val2: val1+val2)  # counts the number of points of each cell
+
 
 # from the set of cells, returns the cells with the number of points in the square 3x3 with that cell as center
 def roundB_3(points_per_cell):
@@ -97,11 +101,13 @@ def roundB_3(points_per_cell):
                         .mapPartitions(lambda cs: map_roundB(cs, 3))\
                         .reduceByKey(reduce_roundB)
 
+
 # from the set of cells, returns the cells with the number of points in the square 7x7 with that cell as center
 def roundB_7(points_per_cell):
     return points_per_cell\
                         .mapPartitions(lambda cs: map_roundB(cs, 7))\
                         .reduceByKey(reduce_roundB)
+
 
 # from the points per cell, points per 3x3 square and point per 7x7 square, returns the number of outliers, non-outliers, and uncertain points
 def roundC(cells, M):
@@ -110,14 +116,16 @@ def roundC(cells, M):
                 .groupByKey()\
                 .flatMap(reduce_roundC)
 
+
 # map each point into the cell it belongs, with value 1
 def map_roundA(points, D):
     # points = [(x1, y1), (x2, y2),...]
     SIDE = D/(2*(2**0.5))
     val = []
     for i, point in enumerate(points):
-        val.append(((int(point[0]/SIDE),int(point[1]/SIDE)), 1)) # convert each point in the cell it is in
+        val.append(((int(point[0]/SIDE), int(point[1]/SIDE)), 1))    # convert each point in the cell it is in
     return val
+
 
 # map each cell C into a list of cells that are centers of a square that contains the cell C
 def map_roundB(cells, square_dim):
@@ -132,6 +140,7 @@ def map_roundB(cells, square_dim):
                     squares_cells.append(((cell[0][0]+i, cell[0][1]+j), (cell[1], 0)))  # ((i, j), (# of points in (i,j), 0))
     return squares_cells
 
+
 # returns the number of points in the square, and 1 if the center contains points, or 0 otherwise
 def reduce_roundB(square1, square2):
     # square = (# of points in the square, 0 or 1)
@@ -140,6 +149,7 @@ def reduce_roundB(square1, square2):
     points_count += (square1[0] + square2[0])   
     center_count += (square1[1] + square2[1])   
     return (points_count, center_count)
+
 
 # map all the information into an identifier ("outliers", "non-outliers", "uncertain"), 
 # the cell that contain that type of points and the number of points it contains
@@ -171,7 +181,7 @@ def reduce_roundC(cells):
     return (cells[0], (list_square, number_of_points))
 
 
-# plot the points, the grid with squares of diagonal D/2 and the ball of each point
+# (not requested, used for debugging) plot the points, the grid with squares of diagonal D/2 and the ball of each point
 def plot_points(points_list, D):
     from matplotlib import pyplot as plt
     import numpy as np
