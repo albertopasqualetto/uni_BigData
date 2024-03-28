@@ -63,14 +63,14 @@ def main():
 def ExactOutliers(points_list, M, D):
     outliers = {}
     # for each point the distance with all the points (itself and the others) is computed
-    for current_point in points_list:
+    for i, current_point in enumerate(points_list):
         points_in_ball = 0  
         for point in points_list: 
             if math.dist(current_point, point) < D: # the point is inside the ball D
                 points_in_ball += 1
-        if points_in_ball <= M : # the current point is an outlier
-            outliers[len(outliers)] = current_point
-    outliers = [points_list[k] for k, v in sorted(outliers.items(), key=lambda item: item[1])] # sorted list of outliers
+        if points_in_ball <= M: # the current point is an outlier
+            outliers[i] = points_in_ball    # save the number of points in the ball using the index of the point as key
+    outliers = [points_list[k] for k, v in sorted(outliers.items(), key=lambda item: item[1])]  # list of outliers sorted by the number of points in the ball
     return outliers
 
 
