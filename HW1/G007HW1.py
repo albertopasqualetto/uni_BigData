@@ -56,6 +56,7 @@ def MRApproxOutliers(inputPoints, D, M, K):
     start_time_ns = time.time_ns()
     (points_per_cell, approx_out) = ApproxOutliersAlgo(inputPoints, M, D)
     end_time_ns = time.time_ns()
+    approx_out = approx_out.collect()
     results = {}
     for certainty, v in zip(approx_out[0:-1:2], approx_out[1::2]):
         results[certainty] = v
@@ -91,7 +92,7 @@ def ApproxOutliersAlgo(points, M, D):
                     .map(lambda x: (x[0], tuple(x[1])))
 
     outliers = roundC(u, M)
-    return (points_per_cell, outliers.collect())
+    return (points_per_cell, outliers)
 
 
 # from the set of points of the dataset, returns the set of cells of the grid with the number of points it contains
@@ -129,11 +130,20 @@ def map_roundA(points, D):
     SIDE = D/(2*(2**0.5))
     val = []
     for i, point in enumerate(points):
-        val.append(((int(point[0]/SIDE), int(point[1]/SIDE)), 1))    # map each point in the cell it is in
+        # if x or y is negative the starting index is -1, while 0 for the positive values
+        if point[0]<0: 
+            offsetNegX = -1
+        else:
+            offsetNegX = 0
+        if point[1]<0:
+            offsetNegY = -1
+        else:
+            offsetNegY = 0
+        val.append(((int((point[0]/SIDE)+offsetNegX), int((point[1]/SIDE)+offsetNegY)), 1)) # map each point in the cell it is in
     return val
 
 
-# map each cell C into a list of all cells that are centers of a square that contains the cell C
+# map each cell C into a list of squares such that they all contain the cell C
 def map_roundB(cells, square_dim):
     # cells = [[(i1, j1), # of points in (i1, j1)], [(i2, j2), # of points in (i2, j2)]]
     squares_cells = []
@@ -147,11 +157,11 @@ def map_roundB(cells, square_dim):
     return squares_cells
 
 
-# returns the number of points in the square, and 1 if the center contains points, or 0 otherwise
+# returns the number of points in the square, and 1 if the center cell contains points, 0 otherwise
 def reduce_roundB(square1, square2):
     # square = (# of points in the square, 0 or 1)
     points_count = 0    # count of the points in the square
-    center_count = 0    # count of centers (will result 1 only if the center contains points)
+    center_count = 0    # count of valid centers (will result 1 only if the center cell contains points)
     points_count += (square1[0] + square2[0])
     center_count += (square1[1] + square2[1])
     return (points_count, center_count)
@@ -187,7 +197,7 @@ def reduce_roundC(cells):
     return (cells[0], (list_square, number_of_points))
 
 
-# (not requested, used for debugging) plot the points, the grid with squares of diagonal D/(sqrt(2)*2) and the ball of each point
+# (not requested, used for debugging) plot the points, the grid with squares of diagonal D/2 and the ball of each point
 def plot_points(points_list, D):
     from matplotlib import pyplot as plt
     import numpy as np
