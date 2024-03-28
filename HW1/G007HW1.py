@@ -20,47 +20,54 @@ def main():
     L = int(sys.argv[5])    # number of partitions
 
     print(f"{file_name} D={D} M={M} K={K} L={L}")
-    # map from file to points
-    points = sc.textFile(file_name)\
-                                    .flatMap(lambda s: [tuple(float(x) for x in s.split(','))])\
-                                    .repartition(L)\
-                                    .cache()
-    # print the number of points
-    num = points.count()
-    print("Number of points =", num)
+    # import file into an RDD of strings (rawData)
+    rawData = sc.textFile(file_name)
+    # map rowData into a RDD of tuples of floats subdivided into L partitions (inputPoints)
+    inputPoints = rawData\
+                    .flatMap(lambda s: [tuple(float(x) for x in s.split(','))])\
+                    .repartition(L)\
+                    .cache()
+
+    num = inputPoints.count()
+    print("Number of inputPoints =", num)
 
     # EXACT ALGORITHM
     if num < 200000:
-        points_list = points.collect()
-        start_time_ns = time.time_ns()
-        outliers = ExactOutliers(points_list, M, D)
-        end_time_ns = time.time_ns()
-        print('Number of Outliers = ', len(outliers))
-        for i in range(0, min(K, len(outliers))):
-            print(f"Point: ({outliers[i][0]},{outliers[i][1]})")
-        print("Running time of ExactOutliers =", (end_time_ns-start_time_ns)/(10**6), "ms")
+        listOfPoints = inputPoints.collect()
+        ExactOutliers(listOfPoints, D, M, K)
 
     # APPROXIMATE ALGORITHM
+    MRApproxOutliers(inputPoints, D, M, K)
+
+    # plot_points(inputPoints.collect(), D)
+
+
+def ExactOutliers(listOfPoints, D, M, K):
     start_time_ns = time.time_ns()
-    (points_per_cell, approx_out) = ApproxOutliers(points, M, D)
+    outliers = ExactOutliersAlgo(listOfPoints, M, D)
+    end_time_ns = time.time_ns()
+    print('Number of Outliers = ', len(outliers))
+    for i in range(0, min(K, len(outliers))):
+        print(f"Point: ({outliers[i][0]},{outliers[i][1]})")
+    print("Running time of ExactOutliers =", (end_time_ns - start_time_ns) / (10 ** 6), "ms")
+
+
+def MRApproxOutliers(inputPoints, D, M, K):
+    start_time_ns = time.time_ns()
+    (points_per_cell, approx_out) = ApproxOutliersAlgo(inputPoints, M, D)
     end_time_ns = time.time_ns()
     results = {}
     for certainty, v in zip(approx_out[0:-1:2], approx_out[1::2]):
         results[certainty] = v
-
     print("Number of sure outliers =", results['outliers'][1] if 'outliers' in results.keys() else 0)
     print("Number of uncertain points =", results['uncertain'][1] if 'uncertain' in results.keys() else 0)
-
     first_K_nonempty = points_per_cell.takeOrdered(K, lambda x: x[1])
     for i in range(0, len(first_K_nonempty)):
         print(f"Cell: ({first_K_nonempty[i][0][0]},{first_K_nonempty[i][0][1]})  Size = {first_K_nonempty[i][1]}")
-
-    print("Running time of ApproxOutliers =", (end_time_ns-start_time_ns)/(10**6), "ms")
-
-    # plot_points(points.collect(), D)
+    print("Running time of ApproxOutliers =", (end_time_ns - start_time_ns) / (10 ** 6), "ms")
 
 
-def ExactOutliers(points_list, M, D):
+def ExactOutliersAlgo(points_list, M, D):
     outliers = {}
     # for each point the distance with all the points (itself and the others) is computed
     for i, current_point in enumerate(points_list):
@@ -74,7 +81,7 @@ def ExactOutliers(points_list, M, D):
     return outliers
 
 
-def ApproxOutliers(points, M, D):
+def ApproxOutliersAlgo(points, M, D):
     points_per_cell = roundA(points, D).cache() # cache because after all the rounds we have to reuse this RDD
     points_square_3 = roundB_3(points_per_cell)
     points_square_7 = roundB_7(points_per_cell)
