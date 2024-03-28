@@ -71,14 +71,13 @@ def ExactOutliersAlgo(points_list, M, D):
     outliers = {}
     # for each point the distance with all the points (itself and the others) is computed
     for i, current_point in enumerate(points_list):
-        points_in_ball = 0  
-        for point in points_list: 
+        points_in_ball = 0
+        for point in points_list:
             if math.dist(current_point, point) < D: # the point is inside the ball with radius D
                 points_in_ball += 1
         if points_in_ball <= M: # the current point is an outlier
             outliers[i] = points_in_ball    # save the number of points in the ball using the index of the point as key
-    outliers = [points_list[k] for k, v in sorted(outliers.items(), key=lambda item: item[1])]  # list of outliers sorted by the number of points in the ball
-    return outliers
+    return tuple(points_list[k] for k, v in sorted(outliers.items(), key=lambda item: item[1]))  # returns the list of outliers sorted by the number of points in the ball
 
 
 def ApproxOutliersAlgo(points, M, D):
@@ -89,7 +88,7 @@ def ApproxOutliersAlgo(points, M, D):
     # merge all the obtained results
     u = sc.union([points_square_3, points_square_7, points_per_cell])
     u = u.groupByKey()\
-                    .map(lambda x: (x[0], list(x[1])))
+                    .map(lambda x: (x[0], tuple(x[1])))
 
     outliers = roundC(u, M)
     return (points_per_cell, outliers.collect())
@@ -99,8 +98,7 @@ def ApproxOutliersAlgo(points, M, D):
 def roundA(points, D):
     return points\
                 .mapPartitions(lambda pts: map_roundA(pts, D))\
-                .reduceByKey(lambda val1, val2: val1+val2)  # map a point into its cells and then
-                                                            # counts the number of points inside each cell
+                .reduceByKey(lambda val1, val2: val1+val2)  # map a point into its cells and then counts the number of points inside each cell
 
 
 # from the set of cells, returns the cells with the number of points in the square 3x3 with that cell as center
@@ -140,7 +138,7 @@ def map_roundB(cells, square_dim):
     # cells = [[(i1, j1), # of points in (i1, j1)], [(i2, j2), # of points in (i2, j2)]]
     squares_cells = []
     for cell in cells:
-        for i in range(-int(square_dim/2), int(square_dim/2) + 1): 
+        for i in range(-int(square_dim/2), int(square_dim/2) + 1):
             for j in range(-int(square_dim/2), int(square_dim/2) + 1):
                 if i == 0 and j == 0:  # if the current cell is the center
                     squares_cells.append(((cell[0][0], cell[0][1]), (cell[1], 1)))      # ((i, j), (# of points in (i,j), 1))
@@ -154,8 +152,8 @@ def reduce_roundB(square1, square2):
     # square = (# of points in the square, 0 or 1)
     points_count = 0    # count of the points in the square
     center_count = 0    # count of centers (will result 1 only if the center contains points)
-    points_count += (square1[0] + square2[0])   
-    center_count += (square1[1] + square2[1])   
+    points_count += (square1[0] + square2[0])
+    center_count += (square1[1] + square2[1])
     return (points_count, center_count)
 
 
@@ -196,8 +194,8 @@ def plot_points(points_list, D):
     fig, ax = plt.subplots()
     for p in points_list:
         ax.add_patch(plt.Circle(p, D, color='k', fill=False))
-    x = [p[0] for p in points_list]
-    y = [p[1] for p in points_list]
+    x = tuple(p[0] for p in points_list)
+    y = tuple(p[1] for p in points_list)
     plt.scatter(x, y)
     for i in range(len(points_list)):
         plt.annotate(str(i), (x[i], y[i]))
