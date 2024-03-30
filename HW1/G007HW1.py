@@ -56,7 +56,6 @@ def MRApproxOutliers(inputPoints, D, M, K):
     start_time_ns = time.time_ns()
     (points_per_cell, approx_out) = ApproxOutliersAlgo(inputPoints, M, D)
     end_time_ns = time.time_ns()
-    approx_out = approx_out.collect()
     results = {}
     for certainty, v in zip(approx_out[0:-1:2], approx_out[1::2]):
         results[certainty] = v
@@ -92,7 +91,7 @@ def ApproxOutliersAlgo(points, M, D):
                     .map(lambda x: (x[0], tuple(x[1])))
 
     outliers = roundC(u, M)
-    return (points_per_cell, outliers)
+    return (points_per_cell, outliers.collect())
 
 
 # from the set of points of the dataset, returns the set of cells of the grid with the number of points it contains
