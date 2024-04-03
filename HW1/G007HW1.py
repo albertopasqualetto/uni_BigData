@@ -94,7 +94,7 @@ def ApproxOutliersAlgo(points, M, D):
     return (points_per_cell, outliers.collect())
 
 
-# from the set of points of the dataset, returns the set of cells of the grid with the number of points it contains
+# from the set of points of the dataset, returns the cells of the grid and for each cell how many points are inside
 def roundA(points, D):
     return points\
                 .mapPartitions(lambda pts: map_roundA(pts, D))\
@@ -173,7 +173,7 @@ def map_roundC(cells, M):
     # cell = [(i, j), [(points_count3, center_count3), (points_count7, center_count7), # of points in (i,j)]]
     val = []
     for cell in cells:
-        if cell[1][0][1] != 0:
+        if cell[1][0][1] != 0: # the zero means that the square is built around an empty cell
             N3 = cell[1][0][0]
             N7 = cell[1][1][0]
             if N3 > M:          # surely non-outliers
