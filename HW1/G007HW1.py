@@ -3,16 +3,12 @@ import sys
 import time
 import math
 
-conf = SparkConf().setAppName('G007HW1')
-sc = SparkContext(conf=conf)
-sc.setLogLevel("WARN")
-
 
 def main():
     argc = len(sys.argv)
     if argc != 6:
         print('Usage: python3 G007HW1.py <file_name> <D> <M> <K> <L>')
-        exit(1)
+        sys.exit(1)
     file_name = sys.argv[1]
     D = float(sys.argv[2])  # exact algorithm radius: D, approximate algorithm cell diagonal: D/2
     M = int(sys.argv[3])    # threshold for outliers
@@ -20,6 +16,11 @@ def main():
     L = int(sys.argv[5])    # number of partitions
 
     print(f"{file_name} D={D} M={M} K={K} L={L}")
+
+    conf = SparkConf().setAppName('G007HW1')
+    sc = SparkContext(conf=conf)
+    sc.setLogLevel("WARN")
+
     # import file into an RDD of strings (rawData)
     rawData = sc.textFile(file_name)
     # map rowData into a RDD of tuples of floats subdivided into L partitions (inputPoints)
@@ -86,7 +87,7 @@ def ApproxOutliersAlgo(points, M, D):
     points_square_7 = roundB_7(points_per_cell)
 
     # merge all the obtained results
-    u = sc.union([points_square_3, points_square_7, points_per_cell])
+    u = points_square_3.union(points_square_7).union(points_per_cell)
     u = u.groupByKey()\
                     .map(lambda x: (x[0], tuple(x[1])))
 
