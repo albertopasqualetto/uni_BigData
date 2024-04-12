@@ -23,6 +23,7 @@ def main():
 
     # import file into an RDD of strings (rawData)
     rawData = sc.textFile(file_name)
+
     # map rowData into a RDD of tuples of floats subdivided into L partitions (inputPoints)
     inputPoints = rawData\
                     .flatMap(lambda s: [tuple(float(x) for x in s.split(','))])\
@@ -102,21 +103,24 @@ def roundA(points, D):
                 .reduceByKey(lambda val1, val2: val1+val2)  # map a point into its cells and then counts the number of points inside each cell
 
 
-# from the set of cells, returns the cells with the number of points in the square 3x3 with that cell as center
+# from the set of cells, returns the squares 3x3 with the number of points inside
 def roundB_3(points_per_cell):
     return points_per_cell\
                         .flatMap(lambda cs: map_roundB(cs, 3))\
                         .reduceByKey(reduce_roundB)
 
 
-# from the set of cells, returns the cells with the number of points in the square 7x7 with that cell as center
+# from the set of cells, returns the squares 7x7 with the number of points inside
 def roundB_7(points_per_cell):
     return points_per_cell\
                         .flatMap(lambda cs: map_roundB(cs, 7))\
                         .reduceByKey(reduce_roundB)
 
 
-# from the points per cell, points per 3x3 square and point per 7x7 square, returns the number of outliers, non-outliers, and uncertain points
+# from the points per cell, points per 3x3 square and point per 7x7 square, 
+# returns an RDD with "outliers", "non-outliers" and "uncertain" as key and with the list of cells of that type 
+# and the number of points for each category
+# 'empty' is used for the center cell of the square that is empty
 def roundC(cells, M):
     return cells\
                 .map(lambda cs: map_roundC(cs, M))\
@@ -126,7 +130,7 @@ def roundC(cells, M):
 
 # map each point into the cell it belongs, with value 1
 def map_roundA(point, D):
-    # points = [(x1, y1), (x2, y2),...]
+    # point = (x1, y1)
     SIDE = D/(2*(2**0.5))
     # if x or y is negative the starting index is -1, while 0 for the positive values
     if point[0]<0: 
@@ -137,12 +141,11 @@ def map_roundA(point, D):
         offsetNegY = -1
     else:
         offsetNegY = 0
-    val = ((int((point[0]/SIDE)+offsetNegX), int((point[1]/SIDE)+offsetNegY)), 1) # map each point in the cell it is in
-    return val
+    return ((int((point[0]/SIDE)+offsetNegX), int((point[1]/SIDE)+offsetNegY)), 1) # map each point in the cell it is in
 
 # map each cell C into a list of squares such that they all contain the cell C
 def map_roundB(cell, square_dim):
-    # cells = [[(i1, j1), # of points in (i1, j1)], [(i2, j2), # of points in (i2, j2)]]
+    # cell = [(i1, j1), # of points in (i1, j1)]
     squares_cells = []
     for i in range(-int(square_dim/2), int(square_dim/2) + 1):
         for j in range(-int(square_dim/2), int(square_dim/2) + 1):
@@ -155,7 +158,7 @@ def map_roundB(cell, square_dim):
 
 # returns the number of points in the square, and 1 if the center cell contains points, 0 otherwise
 def reduce_roundB(square1,square2):
-    # # square = (# of points in the square, 0 or 1)
+    # square = (# of points in the square, 0 or 1)
     points_count = 0    # count of the points in the square
     center_count = 0    # count of valid centers (will result 1 only if the center cell contains points)
     points_count += (square1[0] + square2[0])
@@ -163,8 +166,8 @@ def reduce_roundB(square1,square2):
     return (points_count, center_count)
 
 
-# map all the information into a pair with identifier ("outliers", "non-outliers", "uncertain") and the value is 
-# the cell that contain that type of points and the number of points it contains
+# map all the information into a pair with identifier ("outliers", "non-outliers", "uncertain", "empty") and the value is 
+# the index of the cell that contain that type of points and the number of points it contains
 def map_roundC(cell, M):
     # cell = [(i, j), [(points_count3, center_count3), (points_count7, center_count7), # of points in (i,j)]]
     if cell[1][0][1] != 0: # the zero means that the square is built around an empty cell
@@ -177,11 +180,13 @@ def map_roundC(cell, M):
         elif N3 <= M < N7:  # uncertain
             return ('uncertain', (cell[0], cell[1][2]))
     else:
-        return ('empty', (cell[0], 0))
+        return ('empty', (cell[0], 0)) # the center cell of the square is empty
     
 
 
-# returns the number of "outliers", "non-outliers" and "uncertain"
+# returns an RDD with "outliers", "non-outliers", and "uncertain" as key and with the list of cells of that type 
+# and the number of points for each category
+# 'empty' is used for the center cell of the square that is empty
 def reduce_roundC(cells):
     # cells = [outliers/non-outliers/uncertain/empty, [((i1, j1), # of points in (i1, j1)), ((i2, j2), # of points in (i2, j2)),...]]
     list_square = []
