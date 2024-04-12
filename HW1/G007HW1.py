@@ -120,7 +120,7 @@ def roundB_7(points_per_cell):
 # from the points per cell, points per 3x3 square and point per 7x7 square, 
 # returns an RDD with "outliers", "non-outliers" and "uncertain" as key and with the list of cells of that type 
 # and the number of points for each category
-# 'empty' is used for the center cell of the square that is empty
+# 'empty' is used when the center cell of the square is empty
 def roundC(cells, M):
     return cells\
                 .map(lambda cs: map_roundC(cs, M))\
