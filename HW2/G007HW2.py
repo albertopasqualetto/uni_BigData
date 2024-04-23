@@ -1,7 +1,7 @@
 from pyspark import SparkContext, SparkConf
 import sys
 import time
-import math
+import random as rnd
 
 conf = SparkConf().setAppName('G007HW2')
 sc = SparkContext(conf=conf)
@@ -42,8 +42,18 @@ def SequentialFFT(P, K):
     # K is the number of clusters
     # returns a set C of K centers
     # O(|P|*K)
-    pass
+    S = []
+    S.append(rnd.choice(P))
+    d = {k:distance(k, S[0]) for k in P}
+    for i in range(1, K):
+        c = max(d, key=d.get)
+        S.append(c)
+        for p in P:
+            d[p] = min(d[p], distance(p, c))
+    return S
 
+def distance(p1, p2):
+    return ((p1[0]-p2[0])**2 + (p1[1]-p2[1])**2)**0.5
 
 def MRFFT(P, K):
     # P is the list of points
