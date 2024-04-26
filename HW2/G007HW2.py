@@ -61,27 +61,31 @@ def MRFFT(P, K, L):
     # D is the radius (float)
 
     coreset = FFTround1(P, K, L)
-    #print("coreset = ", coreset.collect())
+    print("Coreset = ", coreset.collect())
     centers = FFTround2(coreset, K)
-    #print("centers = ", centers.collect())
-    #radius = FFTround3(centers)
-    pass
+    print("Centers = ", centers.collect())
+    radius = FFTround3(centers)
+    print("Radius = ", radius)
+    return radius
+
 # TODO MRFFT must compute and print, separately, the running time required by each of the 3 rounds.
 
 def FFTround1(P, K, L):
     # compute the coreset
-    # point in P already mapped
-    # reduction
+    # map P into L subsets of equal size
+    # reduce every subset with FFT
     return P\
             .repartition(L)\
             .mapPartitions(lambda p: SequentialFFT(list(p), K))
 
 def FFTround2(coreset, K):
     # obtain the centers from SequentialFFT
+    # empty map
+    # compute the centers
     centers =  coreset\
                 .repartition(1)\
                 .mapPartitions(lambda p: SequentialFFT(list(p), K))
-    global C    # set of centers
+    global C
     C = sc.broadcast(centers.collect())
     return centers
 
