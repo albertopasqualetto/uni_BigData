@@ -64,11 +64,12 @@ def MRFFT(P, K, L):
     print("Coreset = ", coreset.collect())
     centers = FFTround2(coreset, K)
     print("Centers = ", centers.collect())
-    radius = FFTround3(centers)
+    radius = FFTround3(centers).collect()[0][1]
     print("Radius = ", radius)
     return radius
 
 # TODO MRFFT must compute and print, separately, the running time required by each of the 3 rounds.
+
 
 def FFTround1(P, K, L):
     # compute the coreset
@@ -95,13 +96,15 @@ def FFTround3(points):
     global C
     # C.value
     points\
-        .flatMap(lambda pt: FFTmap_round3(pt, C.value))\
-        .reduceByKey(max)
+        .flatMap(lambda pt: FFTmap_round3(pt, C))\
+        .reduceByKey(lambda r1, r2: (0, max(r1, r2)))
+
+    return points
 
 
 def FFTmap_round3(point, C):
     # returns the distance between the point and the closest center "dist(x,C)"
-    nearest_center = min(C, key=lambda c: distance(point, c))
+    nearest_center = min(C.value, key=lambda c: distance(point, c))
     return (0, distance(point, nearest_center)) # 0 is a dummy key to then group all the distances together
 
 
