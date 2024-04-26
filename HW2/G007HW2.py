@@ -34,7 +34,7 @@ def main():
     num = inputPoints.count()
     print("Number of inputPoints =", num)   # TODO this was the error in HW1
 
-    D = MRFFT(inputPoints, K)
+    D = MRFFT(inputPoints, K, L)
 
     MRApproxOutliers(inputPoints, D, M)
 
@@ -55,26 +55,35 @@ def SequentialFFT(P, K):
     return S
 
 
-def MRFFT(P, K):
+def MRFFT(P, K, L):
     # P is the list of points
     # K is the number of clusters
     # D is the radius (float)
 
-    # return D
+    coreset = FFTround1(P, K, L)
+    #print("coreset = ", coreset.collect())
+    centers = FFTround2(coreset, K)
+    #print("centers = ", centers.collect())
+    #radius = FFTround3(centers)
     pass
 # TODO MRFFT must compute and print, separately, the running time required by each of the 3 rounds.
 
-
-def FFTround1():
+def FFTround1(P, K, L):
     # compute the coreset
-    pass
+    # point in P already mapped
+    # reduction
+    return P\
+            .repartition(L)\
+            .mapPartitions(lambda p: SequentialFFT(list(p), K))
 
-
-def FFTround2():
+def FFTround2(coreset, K):
     # obtain the centers from SequentialFFT
+    centers =  coreset\
+                .repartition(1)\
+                .mapPartitions(lambda p: SequentialFFT(list(p), K))
     global C    # set of centers
-    C = sc.broadcast([1, 2, 3, 4, 5])
-    pass
+    C = sc.broadcast(centers.collect())
+    return centers
 
 
 def FFTround3(points):
@@ -148,7 +157,6 @@ def AOroundB_7(points_per_cell):
     return points_per_cell\
                         .flatMap(lambda cs: AOmap_roundB(cs, 7))\
                         .reduceByKey(AOreduce_roundB)
-
 
 # from the points per cell, points per 3x3 square and point per 7x7 square, 
 # returns an RDD with "outliers", "non-outliers" and "uncertain" as key and with the list of cells of that type 
