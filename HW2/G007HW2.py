@@ -74,11 +74,19 @@ def FFTround2():
     pass
 
 
-def FFTround3():
-    # compute the radius R (float)
+def FFTround3(points):
+    # compute the radius R (float) of the clustering induced by the centers
     global C
-    C.value
-    pass
+    # C.value
+    points\
+        .flatMap(lambda pt: FFTmap_round3(pt, C.value))\
+        .reduceByKey(max)
+
+
+def FFTmap_round3(point, C):
+    # returns the distance between the point and the closest center "dist(x,C)"
+    nearest_center = min(C, key=lambda c: distance(point, c))
+    return (0, distance(point, nearest_center))
 
 
 def MRApproxOutliers(inputPoints, D, M):
