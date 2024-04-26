@@ -79,13 +79,14 @@ def FFTround1(P, K, L):
             .repartition(L)\
             .mapPartitions(lambda p: SequentialFFT(list(p), K))
 
+
 def FFTround2(coreset, K):
     # obtain the centers from SequentialFFT
     # empty map
     # compute the centers
-    centers =  coreset\
-                .repartition(1)\
-                .mapPartitions(lambda p: SequentialFFT(list(p), K))
+    centers = coreset\
+                    .repartition(1)\
+                    .mapPartitions(lambda p: SequentialFFT(list(p), K))
     global C
     C = sc.broadcast(centers.collect())
     return centers
