@@ -32,7 +32,7 @@ def main():
                         .cache()
 
     num = inputPoints.count()
-    print("Number of inputPoints =", num)
+    print("Number of inputPoints =", num)   # TODO this was the error in HW1
 
     MRFFT(inputPoints, K)
 
@@ -44,7 +44,7 @@ def SequentialFFT(P, K):
     # O(|P|*K)
     S = []
     S.append(rnd.choice(P))
-    d = {k:distance(k, S[0]) for k in P}
+    d = {k: distance(k, S[0]) for k in P}
     for i in range(1, K):
         c = max(d, key=d.get)
         S.append(c)
@@ -52,14 +52,13 @@ def SequentialFFT(P, K):
             d[p] = min(d[p], distance(p, c))
     return S
 
-def distance(p1, p2):
-    return ((p1[0]-p2[0])**2 + (p1[1]-p2[1])**2)**0.5
 
 def MRFFT(P, K):
     # P is the list of points
     # K is the number of clusters
     # D is the radius (float)
     pass
+# TODO MRFFT must compute and print, separately, the running time required by each of the 3 rounds.
 
 
 def FFTround1():
@@ -86,7 +85,15 @@ def FFTround3(points):
 def FFTmap_round3(point, C):
     # returns the distance between the point and the closest center "dist(x,C)"
     nearest_center = min(C, key=lambda c: distance(point, c))
-    return (0, distance(point, nearest_center))
+    return (0, distance(point, nearest_center)) # 0 is a dummy key to then group all the distances together
+
+
+# returns the Euclidean distance between two points p1 and p2 expressed as tuples
+def distance(p1, p2):
+    return ((p1[0]-p2[0])**2 + (p1[1]-p2[1])**2)**0.5
+
+
+# ApproxOutliers #######################################################################################################
 
 
 def MRApproxOutliers(inputPoints, D, M):
