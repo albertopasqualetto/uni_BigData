@@ -34,7 +34,9 @@ def main():
     num = inputPoints.count()
     print("Number of inputPoints =", num)   # TODO this was the error in HW1
 
-    MRFFT(inputPoints, K)
+    D = MRFFT(inputPoints, K)
+
+    MRApproxOutliers(inputPoints, D, M)
 
 
 def SequentialFFT(P, K):
@@ -57,6 +59,8 @@ def MRFFT(P, K):
     # P is the list of points
     # K is the number of clusters
     # D is the radius (float)
+
+    # return D
     pass
 # TODO MRFFT must compute and print, separately, the running time required by each of the 3 rounds.
 
