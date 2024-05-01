@@ -21,7 +21,7 @@ def main():
     L = int(sys.argv[4])    # number of partitions
 
     print(f"{file_name} M={M} K={K} L={L}")
-
+    # TODO: look for the output requested
     # import file into an RDD of strings (rawData)
     rawData = sc.textFile(file_name)
 
@@ -32,7 +32,7 @@ def main():
                         .cache()
 
     num = inputPoints.count()
-    print("Number of inputPoints =", num)   # TODO this was the error in HW1
+    print("Number of Points =", num)
 
     D = MRFFT(inputPoints, K, L)
 
@@ -76,8 +76,10 @@ def FFTround1(P, K, L):
     # map P into L subsets of equal size
     # reduce every subset with FFT
     return P\
-            .repartition(L)\
-            .mapPartitions(lambda p: SequentialFFT(list(p), K))
+            .mapPartitions(lambda p: SequentialFFT(list(p), K))\
+            .map(lambda c: (0, c))  # 0 is a dummy key to then group all the centers together
+            #.repartition(L)\ this is not necessary because the inputPoints are already partitioned
+            
 
 
 def FFTround2(coreset, K):
@@ -85,8 +87,9 @@ def FFTround2(coreset, K):
     # empty map
     # compute the centers
     centers = coreset\
-                    .repartition(1)\
-                    .mapPartitions(lambda p: SequentialFFT(list(p), K))
+                    .groupByKey()\
+                    .map(lambda p: SequentialFFT(list(p), K))
+                    #.repartition(1)\ #this is not necessary because the output is already a single partition
     global C
     C = sc.broadcast(centers.collect())
     return centers
@@ -96,11 +99,9 @@ def FFTround3(points):
     # compute the radius R (float) of the clustering induced by the centers
     global C
     # C.value
-    points\
+    return points\
         .flatMap(lambda pt: FFTmap_round3(pt, C))\
         .reduceByKey(lambda r1, r2: (0, max(r1, r2)))
-
-    return points
 
 
 def FFTmap_round3(point, C):
