@@ -60,38 +60,33 @@ def MRFFT(P, K, L):
     # K is the number of clusters
     # D is the radius (float)
 
-    coreset = FFTround1(P, K, L)
-    print("Coreset = ", coreset.collect())
+    coreset = FFTround1(P, K).collect()
+    print("Coreset = ", coreset)
     centers = FFTround2(coreset, K)
-    print("Centers = ", centers.collect())
-    radius = FFTround3(centers).collect()[0][1]
+    print("Centers = ", centers)
+    radius = FFTround3(P).collect()[0][1]
     print("Radius = ", radius)
     return radius
 
 # TODO MRFFT must compute and print, separately, the running time required by each of the 3 rounds.
 
 
-def FFTround1(P, K, L):
+def FFTround1(P, K):
     # compute the coreset
     # map P into L subsets of equal size
     # reduce every subset with FFT
     return P\
-            .mapPartitions(lambda p: SequentialFFT(list(p), K))\
-            .map(lambda c: (0, c))  # 0 is a dummy key to then group all the centers together
-            #.repartition(L)\ this is not necessary because the inputPoints are already partitioned
-            
+            .mapPartitions(lambda p: SequentialFFT(list(p), K))
 
 
 def FFTround2(coreset, K):
     # obtain the centers from SequentialFFT
     # empty map
     # compute the centers
-    centers = coreset\
-                    .groupByKey()\
-                    .map(lambda p: SequentialFFT(list(p), K))
-                    #.repartition(1)\ #this is not necessary because the output is already a single partition
+    centers = SequentialFFT(coreset, K)
+
     global C
-    C = sc.broadcast(centers.collect())
+    C = sc.broadcast(centers)
     return centers
 
 
