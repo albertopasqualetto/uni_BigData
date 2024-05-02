@@ -79,7 +79,7 @@ def FFTround1(P, K):
             .mapPartitions(lambda p: SequentialFFT(list(p), K))
 
 
-def FFTround2(coreset, K):
+def FFTround2(coreset, K):  # TODO check if it is correct without using RDDs
     # obtain the centers from SequentialFFT
     # empty map
     # compute the centers
@@ -113,7 +113,7 @@ def distance(p1, p2):
 # ApproxOutliers #######################################################################################################
 
 
-def MRApproxOutliers(inputPoints, D, M):
+def MRApproxOutliers(inputPoints, D, M):    # TODO naming?
     start_time_ns = time.time_ns()
     (points_per_cell, approx_out) = ApproxOutliersAlgo(inputPoints, M, D)
     end_time_ns = time.time_ns()
