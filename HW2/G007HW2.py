@@ -23,12 +23,12 @@ def main():
     print(f"{file_name} M={M} K={K} L={L}")
     # TODO: look for the output requested
     # import file into an RDD of strings (rawData)
-    rawData = sc.textFile(file_name)
+    rawData = sc.textFile(file_name, L)
 
     # map rowData into a RDD of tuples of floats subdivided into L partitions (inputPoints)
     inputPoints = rawData\
                         .flatMap(lambda s: [tuple(float(x) for x in s.split(','))])\
-                        .repartition(L)\
+                        .coalesce(L)\
                         .cache()
 
     num = inputPoints.count()
