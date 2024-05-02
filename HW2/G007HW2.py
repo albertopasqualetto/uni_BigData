@@ -98,15 +98,15 @@ def FFTround2(coreset, K):
 def FFTround3(points):
     # compute the radius R (float) of the clustering induced by the centers
     global C
-    # C.value
     return points\
-        .flatMap(lambda pt: FFTmap_round3(pt, C))\
-        .reduceByKey(lambda r1, r2: (0, max(r1, r2)))
+        .map(lambda pt: FFTmap_round3(pt, C))\
+        .reduceByKey(lambda r1, r2: max(r1, r2))
 
 
 def FFTmap_round3(point, C):
     # returns the distance between the point and the closest center "dist(x,C)"
-    nearest_center = min(C.value, key=lambda c: distance(point, c))
+    local_C = C.value
+    nearest_center = min(local_C, key=lambda c: distance(point, c))
     return (0, distance(point, nearest_center)) # 0 is a dummy key to then group all the distances together
 
 
