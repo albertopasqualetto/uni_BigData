@@ -34,7 +34,7 @@ def main():
     num = inputPoints.count()
     print("Number of Points =", num)
 
-    D = MRFFT(inputPoints, K, L)
+    D = MRFFT(inputPoints, K)
 
     MRApproxOutliers(inputPoints, D, M)
 
@@ -55,18 +55,27 @@ def SequentialFFT(P, K):
     return S
 
 
-def MRFFT(P, K, L):
+def MRFFT(P, K):
     # P is the list of points
     # K is the number of clusters
     # D is the radius (float)
-
+    start_time_ns = time.time_ns()
     coreset = FFTround1(P, K).collect()
+    end_time_ns = time.time_ns()
+    print("Running time of MR-FFT-Round1 =", (end_time_ns - start_time_ns) / (10 ** 6), "ms")
     print("Coreset = ", coreset)
+    start_time_ns = time.time_ns()
     centers = FFTround2(coreset, K)
+    end_time_ns = time.time_ns()
+    print("Running time of MR-FFT-Round2 =", (end_time_ns - start_time_ns) / (10 ** 6), "ms")
     print("Centers = ", centers)
-    radius = FFTround3(P).collect()[0][1]
-    print("Radius = ", radius)
-    return radius
+    start_time_ns = time.time_ns()
+    radius = FFTround3(P).collect()
+    end_time_ns = time.time_ns()
+    D = radius[0][1]
+    print("Running time of MR-FFT-Round3 =", (end_time_ns - start_time_ns) / (10 ** 6), "ms")
+    print("Radius = ", D)
+    return D
 
 # TODO MRFFT must compute and print, separately, the running time required by each of the 3 rounds.
 
@@ -113,7 +122,7 @@ def distance(p1, p2):
 # ApproxOutliers #######################################################################################################
 
 
-def MRApproxOutliers(inputPoints, D, M):    # TODO naming?
+def MRApproxOutliers(inputPoints, D, M):    # TODO ask naming problem hw1
     start_time_ns = time.time_ns()
     (points_per_cell, approx_out) = ApproxOutliersAlgo(inputPoints, M, D)
     end_time_ns = time.time_ns()
