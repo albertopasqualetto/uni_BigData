@@ -62,18 +62,18 @@ def MRFFT(P, K):
     start_time_ns = time.time_ns()
     coreset = FFTround1(P, K).collect()
     end_time_ns = time.time_ns()
-    print("Running time of MR-FFT-Round1 =", (end_time_ns - start_time_ns) / (10 ** 6), "ms")
-    print("Coreset = ", coreset)
+    print("Running time of MRFFT Round 1 =", (end_time_ns - start_time_ns) / (10 ** 6), "ms")
+    #print("Coreset = ", coreset)
     start_time_ns = time.time_ns()
     centers = FFTround2(coreset, K)
     end_time_ns = time.time_ns()
-    print("Running time of MR-FFT-Round2 =", (end_time_ns - start_time_ns) / (10 ** 6), "ms")
-    print("Centers = ", centers)
+    print("Running time of MRFFT Round 2 =", (end_time_ns - start_time_ns) / (10 ** 6), "ms")
+    #print("Centers = ", centers)
     start_time_ns = time.time_ns()
     radius = FFTround3(P).collect()
     end_time_ns = time.time_ns()
     D = radius[0][1]
-    print("Running time of MR-FFT-Round3 =", (end_time_ns - start_time_ns) / (10 ** 6), "ms")
+    print("Running time of MRFFT Round 3 =", (end_time_ns - start_time_ns) / (10 ** 6), "ms")
     print("Radius = ", D)
     return D
 
@@ -131,9 +131,9 @@ def MRApproxOutliers(inputPoints, D, M):    # TODO ask naming problem hw1
         results[certainty] = v
     print("Number of sure outliers =", results['outliers'][1] if 'outliers' in results.keys() else 0)
     print("Number of uncertain points =", results['uncertain'][1] if 'uncertain' in results.keys() else 0)
-    outputs = points_per_cell.collect()
-    for i in range(0, len(outputs)):
-        print(f"Cell: ({outputs[i][0][0]},{outputs[i][0][1]})  Size = {outputs[i][1]}")
+    #outputs = points_per_cell.collect()
+    # for i in range(0, len(outputs)):
+    #     print(f"Cell: ({outputs[i][0][0]},{outputs[i][0][1]})  Size = {outputs[i][1]}")
     print("Running time of ApproxOutliers =", (end_time_ns - start_time_ns) / (10 ** 6), "ms")
 
 
