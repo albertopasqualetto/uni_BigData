@@ -135,7 +135,7 @@ def MRApproxOutliers(inputPoints, D, M):    # TODO ask naming problem hw1
     #outputs = points_per_cell.collect()
     # for i in range(0, len(outputs)):
     #     print(f"Cell: ({outputs[i][0][0]},{outputs[i][0][1]})  Size = {outputs[i][1]}")
-    print("Running time of ApproxOutliers =", (end_time_ns - start_time_ns) / (10 ** 6), "ms")
+    print("Running time of MRApproxOutliers =", (end_time_ns - start_time_ns) / (10 ** 6), "ms")
 
 
 def ApproxOutliersAlgo(points, M, D):
