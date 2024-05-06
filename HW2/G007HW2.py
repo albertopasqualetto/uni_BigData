@@ -4,7 +4,6 @@ import time
 import random as rnd
 
 conf = SparkConf().setAppName('G007HW2')
-# conf.set("spark.locality.wait", "0s") # from the docx file
 sc = SparkContext(conf=conf)
 sc.setLogLevel("WARN")
 

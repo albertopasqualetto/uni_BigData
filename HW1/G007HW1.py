@@ -31,7 +31,7 @@ def main():
                         .cache()
 
     num = inputPoints.count()
-    print("Number of inputPoints =", num)
+    print("Number of Points =", num)
 
     # EXACT ALGORITHM
     if num < 200000:
@@ -66,7 +66,7 @@ def MRApproxOutliers(inputPoints, D, M, K):
     first_K_nonempty = points_per_cell.takeOrdered(K, lambda x: x[1])
     for i in range(0, len(first_K_nonempty)):
         print(f"Cell: ({first_K_nonempty[i][0][0]},{first_K_nonempty[i][0][1]})  Size = {first_K_nonempty[i][1]}")
-    print("Running time of ApproxOutliers =", (end_time_ns - start_time_ns) / (10 ** 6), "ms")
+    print("Running time of MRApproxOutliers =", (end_time_ns - start_time_ns) / (10 ** 6), "ms")
 
 
 def ExactOutliersAlgo(points_list, M, D):
