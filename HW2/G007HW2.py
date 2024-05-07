@@ -4,6 +4,7 @@ import time
 import random as rnd
 
 conf = SparkConf().setAppName('G007HW2')
+conf.set("spark.locality.wait", "0s")
 sc = SparkContext(conf=conf)
 sc.setLogLevel("WARN")
 
@@ -28,7 +29,7 @@ def main():
     inputPoints = rawData\
                         .flatMap(lambda s: [tuple(float(x) for x in s.split(','))])\
                         .repartition(L)\
-                        .cache()
+                        .persist()
 
     num = inputPoints.count()
     print("Number of points =", num)
@@ -82,7 +83,7 @@ def FFTround1(P, K):
     # map P into L subsets of equal size
     # reduce every subset with FFT
     return P\
-            .mapPartitions(lambda p: SequentialFFT(list(p), K))
+            .mapPartitions(lambda p: SequentialFFT(tuple(p), K))
 
 
 def FFTround2(coreset, K):
