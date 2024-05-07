@@ -1,0 +1,65 @@
+/data/BDC2324/artificial20M_9_100.csv M=10 K=110 L=16 # 2 executors
+Number of points = 20000107
+Running time of MRFFT Round 1 = 202047.109461 ms
+Running time of MRFFT Round 2 = 122.844078 ms
+Running time of MRFFT Round 3 = 156205.661265 ms
+Radius = 2.0836633605263555
+Number of sure outliers = 97
+Number of uncertain points = 3
+Running time of MRApproxOutliers = 13873.422796 ms
+
+
+/data/BDC2324/artificial100M_9_100.csv M=10 K=110 L=16 # 2 executors
+Number of points = 100000108
+Running time of MRFFT Round 1 = 1023793.970175 ms
+Running time of MRFFT Round 2 = 105.015582 ms
+Running time of MRFFT Round 3 = 769367.987276 ms
+Radius = 1.9798467112380196
+Number of sure outliers = 92
+Number of uncertain points = 4
+Running time of MRApproxOutliers = 52923.46513 ms
+
+/data/BDC2324/artificial50M_9_100.csv M=10 K=110 L=16
+Number of points = 50000104
+Running time of MRFFT Round 1 = 517406.382604 ms
+Running time of MRFFT Round 2 = 126.885828 ms
+Running time of MRFFT Round 3 = 387664.015233 ms
+Radius = 1.9360787690587387
+Number of sure outliers = 99
+Number of uncertain points = 1
+Running time of MRApproxOutliers = 28067.459626 ms
+
+
+# For docx second table 16 executors
+
+data/BDC2324/artificial10M_9_100.csv M=3 K=50 L=16
+Number of points = 10000108
+Running time of MRFFT Round 1 = 5829.684395 ms
+Running time of MRFFT Round 2 = 2724.870789 ms
+Running time of MRFFT Round 3 = 5717.357575 ms
+Radius = 8.954090964469817
+Number of sure outliers = 12
+Number of uncertain points = 68
+Running time of MRApproxOutliers = 1809.981278 ms
+
+
+/data/BDC2324/artificial10M_9_100.csv M=3 K=70 L=16
+Number of points = 10000108
+Running time of MRFFT Round 1 = 8183.12944 ms
+Running time of MRFFT Round 2 = 87.001384 ms
+Running time of MRFFT Round 3 = 7030.051295 ms
+Radius = 6.501931097758571
+Number of sure outliers = 40
+Number of uncertain points = 52
+Running time of MRApproxOutliers = 1685.531081 ms
+
+/data/BDC2324/artificial10M_9_100.csv M=3 K=90 L=16
+Number of points = 10000108
+Running time of MRFFT Round 1 = 11375.664073 ms
+Running time of MRFFT Round 2 = 82.484181 ms
+Running time of MRFFT Round 3 = 8722.677793 ms
+Radius = 3.434511027788379
+Number of sure outliers = 91
+Number of uncertain points = 9
+Running time of MRApproxOutliers = 3343.975162 ms
+

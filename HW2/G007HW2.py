@@ -1,4 +1,4 @@
-from pyspark import SparkContext, SparkConf
+from pyspark import SparkContext, SparkConf, StorageLevel
 import sys
 import time
 import random as rnd
@@ -10,7 +10,6 @@ sc = SparkContext(conf=conf)
 sc.setLogLevel("WARN")
 
 C = None    # set of centers
-
 
 def main():
     argc = len(sys.argv)
@@ -30,7 +29,7 @@ def main():
     inputPoints = rawData\
                         .flatMap(lambda s: [tuple(float(x) for x in s.split(','))])\
                         .repartition(L)\
-                        .persist()
+                        .persist(storageLevel=StorageLevel.MEMORY_AND_DISK)
 
     num = inputPoints.count()
     print("Number of points =", num)
@@ -45,16 +44,19 @@ def SequentialFFT(P, K):
     # K is the number of clusters
     # returns a set C of K centers
     # O(|P|*K)
-    S = []
-    S.append(rnd.choice(P))
-    # S.append(P[0])
+    S = [rnd.choice(P)]
+    #S=[P[0]]
     d = [math.dist(k, S[0]) for k in P]
     for _ in range(1, K):
         c_id = max(range(len(d)), key=d.__getitem__)
-        S.append(P[c_id])
+        center = P[c_id]
+        S.append(center)
         for idx, p in enumerate(P):
-            d[idx] = min(d[idx], math.dist(p, P[c_id]))
-    print(S)
+            val = math.dist(p, center)
+            if val < d[idx]:
+                d[idx] = val
+            #d[idx] = min(math.dist(p, center), d[idx])
+    #print(S)
     return S
 
 
@@ -63,7 +65,7 @@ def MRFFT(P, K):
     # K is the number of clusters
     # D is the radius (float)
     start_time_ns = time.time_ns()
-    coreset = FFTround1(P, K).persist()
+    coreset = FFTround1(P, K).persist(storageLevel=StorageLevel.MEMORY_AND_DISK)
     coreset.count() # force the computation of the RDD
     end_time_ns = time.time_ns()
     print("Running time of MRFFT Round 1 =", (end_time_ns - start_time_ns) / (10 ** 6), "ms")
@@ -86,7 +88,7 @@ def FFTround1(P, K):
     # map P into L subsets of equal size
     # reduce every subset with FFT
     return P\
-            .mapPartitions(lambda p: SequentialFFT(tuple(p), K))
+            .mapPartitions(lambda p: SequentialFFT(list(p), K))
 
 
 def FFTround2(coreset, K):
@@ -111,15 +113,15 @@ def FFTround3(points):
 def FFTmap_round3(point, C):
     # returns the distance between the point and the closest center "dist(x,C)"
     local_C = C.value
-    nearest_center = min(local_C, key=lambda c: squared_distance(point, c)**0.5)
-    return (0, squared_distance(point, nearest_center)**0.5) # 0 is a dummy key to then group all the distances together
+    nearest_center = min(local_C, key=lambda c: math.dist(point, c))
+    return (0, math.dist(point, nearest_center)) # 0 is a dummy key to then group all the distances together
 
 
 # returns the Euclidean distance between two points p1 and p2 expressed as tuples
-def squared_distance(p1, p2):
-    d1 = p1[0]-p2[0]
-    d2 = p1[1]-p2[1]
-    return (d1*d1 + d2*d2)
+# def squared_distance(p1, p2):
+#     d1 = p1[0]-p2[0]
+#     d2 = p1[1]-p2[1]
+#     return (d1*d1 + d2*d2)
 
 
 # ApproxOutliers #######################################################################################################
