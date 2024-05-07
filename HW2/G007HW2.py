@@ -114,7 +114,9 @@ def FFTmap_round3(point, C):
 
 # returns the Euclidean distance between two points p1 and p2 expressed as tuples
 def distance(p1, p2):
-    return ((p1[0]-p2[0])**2 + (p1[1]-p2[1])**2)**0.5
+    d1 = p1[0]-p2[0]
+    d2 = p1[1]-p2[1]
+    return (d1*d1 + d2*d2)**0.5
 
 
 # ApproxOutliers #######################################################################################################
