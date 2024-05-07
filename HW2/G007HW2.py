@@ -21,7 +21,6 @@ def main():
     L = int(sys.argv[4])    # number of partitions
 
     print(f"{file_name} M={M} K={K} L={L}")
-    # TODO: look for the output requested
     # import file into an RDD of strings (rawData)
     rawData = sc.textFile(file_name, L)
 
@@ -32,7 +31,7 @@ def main():
                         .cache()
 
     num = inputPoints.count()
-    print("Number of Points =", num)
+    print("Number of points =", num)
 
     D = MRFFT(inputPoints, K)
 
@@ -60,24 +59,22 @@ def MRFFT(P, K):
     # K is the number of clusters
     # D is the radius (float)
     start_time_ns = time.time_ns()
-    coreset = FFTround1(P, K).collect()
+    coreset = FFTround1(P, K).persist()
+    coreset.count() # force the computation of the RDD
     end_time_ns = time.time_ns()
     print("Running time of MRFFT Round 1 =", (end_time_ns - start_time_ns) / (10 ** 6), "ms")
     #print("Coreset = ", coreset)
     start_time_ns = time.time_ns()
-    centers = FFTround2(coreset, K)
+    centers = FFTround2(coreset.collect(), K)
     end_time_ns = time.time_ns()
     print("Running time of MRFFT Round 2 =", (end_time_ns - start_time_ns) / (10 ** 6), "ms")
     #print("Centers = ", centers)
     start_time_ns = time.time_ns()
-    radius = FFTround3(P).collect()
+    D = FFTround3(P).collect()[0][1]
     end_time_ns = time.time_ns()
-    D = radius[0][1]
     print("Running time of MRFFT Round 3 =", (end_time_ns - start_time_ns) / (10 ** 6), "ms")
-    print("Radius = ", D)
+    print("Radius =", D)
     return D
-
-# TODO MRFFT must compute and print, separately, the running time required by each of the 3 rounds.
 
 
 def FFTround1(P, K):
@@ -88,7 +85,7 @@ def FFTround1(P, K):
             .mapPartitions(lambda p: SequentialFFT(list(p), K))
 
 
-def FFTround2(coreset, K):  # TODO check if it is correct without using RDDs
+def FFTround2(coreset, K):
     # obtain the centers from SequentialFFT
     # empty map
     # compute the centers
@@ -122,7 +119,7 @@ def distance(p1, p2):
 # ApproxOutliers #######################################################################################################
 
 
-def MRApproxOutliers(inputPoints, D, M):    # TODO ask naming problem hw1
+def MRApproxOutliers(inputPoints, D, M):
     start_time_ns = time.time_ns()
     (points_per_cell, approx_out) = ApproxOutliersAlgo(inputPoints, M, D)
     end_time_ns = time.time_ns()
