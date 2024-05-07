@@ -46,12 +46,12 @@ def SequentialFFT(P, K):
     # O(|P|*K)
     S = []
     S.append(rnd.choice(P))
-    d = {k: distance(k, S[0]) for k in P}
+    d = {k: squared_distance(k, S[0]) for k in P}
     for i in range(1, K):
         c = max(d, key=d.get)
         S.append(c)
         for p in P:
-            d[p] = min(d[p], distance(p, c))
+            d[p] = min(d[p], squared_distance(p, c))
     return S
 
 
@@ -108,15 +108,15 @@ def FFTround3(points):
 def FFTmap_round3(point, C):
     # returns the distance between the point and the closest center "dist(x,C)"
     local_C = C.value
-    nearest_center = min(local_C, key=lambda c: distance(point, c))
-    return (0, distance(point, nearest_center)) # 0 is a dummy key to then group all the distances together
+    nearest_center = min(local_C, key=lambda c: squared_distance(point, c)**0.5)
+    return (0, squared_distance(point, nearest_center)**0.5) # 0 is a dummy key to then group all the distances together
 
 
 # returns the Euclidean distance between two points p1 and p2 expressed as tuples
-def distance(p1, p2):
+def squared_distance(p1, p2):
     d1 = p1[0]-p2[0]
     d2 = p1[1]-p2[1]
-    return (d1*d1 + d2*d2)**0.5
+    return (d1*d1 + d2*d2)
 
 
 # ApproxOutliers #######################################################################################################
