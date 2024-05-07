@@ -2,6 +2,7 @@ from pyspark import SparkContext, SparkConf
 import sys
 import time
 import random as rnd
+import math
 
 conf = SparkConf().setAppName('G007HW2')
 conf.set("spark.locality.wait", "0s")
@@ -46,12 +47,14 @@ def SequentialFFT(P, K):
     # O(|P|*K)
     S = []
     S.append(rnd.choice(P))
-    d = {k: squared_distance(k, S[0]) for k in P}
-    for i in range(1, K):
-        c = max(d, key=d.get)
-        S.append(c)
-        for p in P:
-            d[p] = min(d[p], squared_distance(p, c))
+    # S.append(P[0])
+    d = [math.dist(k, S[0]) for k in P]
+    for _ in range(1, K):
+        c_id = max(range(len(d)), key=d.__getitem__)
+        S.append(P[c_id])
+        for idx, p in enumerate(P):
+            d[idx] = min(d[idx], math.dist(p, P[c_id]))
+    print(S)
     return S
 
 
