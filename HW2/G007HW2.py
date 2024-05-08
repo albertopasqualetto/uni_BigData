@@ -3,6 +3,7 @@ import sys
 import time
 import random as rnd
 import math
+import array
 
 conf = SparkConf().setAppName('G007HW2')
 conf.set("spark.locality.wait", "0s")
@@ -44,20 +45,35 @@ def SequentialFFT(P, K):
     # K is the number of clusters
     # returns a set C of K centers
     # O(|P|*K)
+    # S = array.array('I', [0 for i in range(K)])
+    # S[0] = rnd.randint(0, len(P)-1)
     S = [rnd.choice(P)]
     #S=[P[0]]
     d = [math.dist(k, S[0]) for k in P]
-    for _ in range(1, K):
-        c_id = max(range(len(d)), key=d.__getitem__)
-        center = P[c_id]
+    id_c = max(range(len(d)), key=d.__getitem__)
+    for i in range(1, K):
+        center = P[id_c]
         S.append(center)
+        max_distance = -1
         for idx, p in enumerate(P):
             val = math.dist(p, center)
             if val < d[idx]:
                 d[idx] = val
+            if d[idx] > max_distance:
+                id_c = idx
+                max_distance = d[idx]
+        # S[i] = id_c
+        # max_distance = -1
+        # for idx, p in enumerate(P):
+        #     val = math.dist(p, P[id_c])
+        #     if val < d[idx]:
+        #         d[idx] = val
+        #     if d[idx] > max_distance:
+        #         id_c = idx
+        #         max_distance = d[idx]
             #d[idx] = min(math.dist(p, center), d[idx])
     #print(S)
-    return S
+    return S #[P[i] for i in S]
 
 
 def MRFFT(P, K):
@@ -88,7 +104,7 @@ def FFTround1(P, K):
     # map P into L subsets of equal size
     # reduce every subset with FFT
     return P\
-            .mapPartitions(lambda p: SequentialFFT(list(p), K))
+            .mapPartitions(lambda p: SequentialFFT(tuple(p), K))
 
 
 def FFTround2(coreset, K):
