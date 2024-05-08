@@ -40,25 +40,29 @@ def main():
     MRApproxOutliers(inputPoints, D, M)
 
 
-def SequentialFFT(P, K):
+def SequentialFFT(P, K):    # P and d have share the same indexes
     # P is the list of points
     # K is the number of clusters
     # returns a set C of K centers
     # O(|P|*K)
-    # S = array.array('I', [0 for i in range(K)])
-    # S[0] = rnd.randint(0, len(P)-1)
-    S = [rnd.choice(P)]
-    #S=[P[0]]
-    d = [math.dist(k, S[0]) for k in P]
+    S = array.array('I', [0])
+    # S = array.array('I', (0 for i in range(K)))
+    S[0] = rnd.randint(0, len(P)-1)
+    # S = [rnd.choice(P)]   # [P[0]]
+    d = array.array('f', (math.dist(k, P[S[0]]) for k in P))
+    # d = [math.dist(k, P[S[0]]) for k in P]
+    # d = [math.dist(k, S[0]) for k in P]
     id_c = max(range(len(d)), key=d.__getitem__)
     for i in range(1, K):
         center = P[id_c]
-        S.append(center)
+        S.extend([id_c])
+        # S[i] = id_c
+        # S.append(center)
         max_distance = -1
         for idx, p in enumerate(P):
-            val = math.dist(p, center)
-            if val < d[idx]:
-                d[idx] = val
+            new_dist_p = math.dist(p, center)
+            if new_dist_p < d[idx]:
+                d[idx] = new_dist_p
             if d[idx] > max_distance:
                 id_c = idx
                 max_distance = d[idx]
@@ -71,9 +75,10 @@ def SequentialFFT(P, K):
         #     if d[idx] > max_distance:
         #         id_c = idx
         #         max_distance = d[idx]
-            #d[idx] = min(math.dist(p, center), d[idx])
-    #print(S)
-    return S #[P[i] for i in S]
+            # d[idx] = min(math.dist(p, center), d[idx])
+    # print(S)
+    return [P[i] for i in S]
+    # return S
 
 
 def MRFFT(P, K):
