@@ -3,7 +3,8 @@ import sys
 import time
 import random as rnd
 import math
-import array
+import numpy as np
+# import array
 
 conf = SparkConf().setAppName('G007HW2')
 conf.set("spark.locality.wait", "0s")
@@ -11,6 +12,8 @@ sc = SparkContext(conf=conf)
 sc.setLogLevel("WARN")
 
 C = None    # set of centers
+NP_2FLOAT64 = np.dtype((np.float64, 2))
+
 
 def main():
     argc = len(sys.argv)
@@ -45,39 +48,68 @@ def SequentialFFT(P, K):    # P and d have share the same indexes
     # K is the number of clusters
     # returns a set C of K centers
     # O(|P|*K)
-    S = array.array('I', [0])
+
+    # P = np.array(P)
+    # S = np.zeros(K, dtype=NP_2FLOAT64)  # to use points instead of indexes; not using points to use less memory
+    S = np.zeros(K, dtype=np.uint32)
+    # S = np.zeros(K, dtype="f,f")
+    # S = array.array('I', [0])
     # S = array.array('I', (0 for i in range(K)))
-    S[0] = rnd.randint(0, len(P)-1)
+    # rng = np.random.default_rng()   # to use points instead of indexes
+    # first_center = rng.choice(P, axis=0)    # to use points instead of indexes
+    # S[0] = first_center # to use points instead of indexes
+    S[0] = np.random.randint(0, P.shape[0])
+    # S[0] = rnd.choice(P)    # [P[0]]
+    # S[0] = rnd.randint(0, len(P)-1)
     # S = [rnd.choice(P)]   # [P[0]]
-    d = array.array('f', (math.dist(k, P[S[0]]) for k in P))
+    first_center_id = P[S[0]]
+    # d = np.linalg.norm(P - first_center, axis=1)    # to use points instead of indexes
+    d = np.linalg.norm(P - first_center_id, axis=1)
+    # print(d)
+    # print(d.shape)
+    # d = np.fromiter((np.linalg.norm(k - np.array(P[S[0]])) for k in np.nditer(P, flags=['refs_ok'])), dtype=np.float32)
+    # d = np.fromiter((math.dist(k, P[S[0]]) for k in P), dtype=np.float32)
+    # d = array.array('f', (math.dist(k, P[S[0]]) for k in P))
     # d = [math.dist(k, P[S[0]]) for k in P]
     # d = [math.dist(k, S[0]) for k in P]
-    id_c = max(range(len(d)), key=d.__getitem__)
+    c_id = np.argmax(d, axis=0)
+    # c_id = max(range(len(d)), key=d.__getitem__)
     for i in range(1, K):
-        center = P[id_c]
-        S.extend([id_c])
-        # S[i] = id_c
+        center = P[c_id]
+        # S[i] = center
+        # S.extend([c_id])
+        S[i] = c_id
         # S.append(center)
-        max_distance = -1
-        for idx, p in enumerate(P):
-            new_dist_p = math.dist(p, center)
-            if new_dist_p < d[idx]:
-                d[idx] = new_dist_p
-            if d[idx] > max_distance:
-                id_c = idx
-                max_distance = d[idx]
-        # S[i] = id_c
+        # S[i] = center   # to use points instead of indexes
+
+        d_new_center = np.linalg.norm(P - center, axis=1)
+        d = np.minimum(d, d_new_center) # pairwise minimum
+        # d = np.minimum(d, np.linalg.norm(P - center, axis=1))
+        c_id = np.argmax(d, axis=0)
         # max_distance = -1
         # for idx, p in enumerate(P):
-        #     val = math.dist(p, P[id_c])
+        #     new_dist_p = np.linalg.norm(p - center)
+        #     if new_dist_p < d[idx]:
+        #         d[idx] = new_dist_p
+        #     if d[idx] > max_distance:
+        #         c_id = idx
+        #         max_distance = d[idx]
+
+        # S[i] = c_id
+        # max_distance = -1
+        # for idx, p in enumerate(P):
+        #     val = math.dist(p, P[c_id])
         #     if val < d[idx]:
         #         d[idx] = val
         #     if d[idx] > max_distance:
-        #         id_c = idx
+        #         c_id = idx
         #         max_distance = d[idx]
             # d[idx] = min(math.dist(p, center), d[idx])
     # print(S)
-    return [P[i] for i in S]
+    # return S.tolist()
+    return P[S].tolist()    # ok
+    # return [P[i] for i in np.nditer(S)]
+    # return [P[i] for i in S]
     # return S
 
 
@@ -89,7 +121,7 @@ def MRFFT(P, K):
     coreset = FFTround1(P, K).persist(storageLevel=StorageLevel.MEMORY_AND_DISK)
     coreset.count() # force the computation of the RDD
     end_time_ns = time.time_ns()
-    print("Running time of MRFFT Round 1 =", (end_time_ns - start_time_ns) / (10 ** 6), "ms")
+    print("Running time of MRFFT Round 1 =", (end_time_ns - start_time_ns) / (10 ** 6), "ms")   # TODO print only an integer?
     #print("Coreset = ", coreset)
     start_time_ns = time.time_ns()
     centers = FFTround2(coreset.collect(), K)
@@ -109,14 +141,17 @@ def FFTround1(P, K):
     # map P into L subsets of equal size
     # reduce every subset with FFT
     return P\
-            .mapPartitions(lambda p: SequentialFFT(tuple(p), K))
+            .mapPartitions(lambda p: SequentialFFT(np.fromiter(p, dtype=NP_2FLOAT64), K))
+            # .mapPartitions(lambda p: SequentialFFT(tuple(p), K))
 
 
 def FFTround2(coreset, K):
     # obtain the centers from SequentialFFT
     # empty map
     # compute the centers
-    centers = SequentialFFT(coreset, K)
+    coreset = np.array(coreset, dtype=np.float64)
+    centers = SequentialFFT(coreset, K) # TODO not sure why dtype is not NP_2FLOAT64, but it works
+    centers = np.array(centers, dtype=np.float64)
 
     global C
     C = sc.broadcast(centers)
@@ -125,17 +160,21 @@ def FFTround2(coreset, K):
 
 def FFTround3(points):
     # compute the radius R (float) of the clustering induced by the centers
-    global C
+    # global C
     return points\
-        .map(lambda pt: FFTmap_round3(pt, C))\
-        .reduceByKey(lambda r1, r2: max(r1, r2))
+        .map(lambda pt: FFTmap_round3(np.array(pt)))\
+        .reduceByKey(lambda r1, r2: r1 if r1 > r2 else r2)  # faster than max(r1, r2)
 
 
-def FFTmap_round3(point, C):
+def FFTmap_round3(point):
     # returns the distance between the point and the closest center "dist(x,C)"
+    global C
     local_C = C.value
-    nearest_center = min(local_C, key=lambda c: math.dist(point, c))
-    return (0, math.dist(point, nearest_center)) # 0 is a dummy key to then group all the distances together
+    # nearest_center = np.argmin(d)
+    # nearest_center = min(local_C, key=lambda c: math.dist(point, c))
+    # d = np.linalg.norm(local_C - point, axis=1); return (0, np.min(d))  # 0 is a dummy key to then group all the distances together
+    return (0, np.min(np.linalg.norm(local_C - point, axis=1)))  # 0 is a dummy key to then group all the distances together
+    # return (0, math.dist(point, nearest_center)) # 0 is a dummy key to then group all the distances together
 
 
 # returns the Euclidean distance between two points p1 and p2 expressed as tuples
