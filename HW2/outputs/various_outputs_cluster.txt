@@ -63,3 +63,13 @@ Number of sure outliers = 91
 Number of uncertain points = 9
 Running time of MRApproxOutliers = 3343.975162 ms
 
+/data/BDC2324/artificial100M_9_100.csv M=10 K=110 L=16  (2 executors, without adding memory)
+Number of points = 100000108
+Running time of MRFFT Round 1 = 206831.521605 ms
+Running time of MRFFT Round 2 = 91.011931 ms
+Running time of MRFFT Round 3 = 600875.876228 ms
+Radius = 2.2201247712684995
+Number of sure outliers = 90
+Number of uncertain points = 7
+Running time of MRApproxOutliers = 62811.127532 ms
+
