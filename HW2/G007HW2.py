@@ -9,7 +9,8 @@ sc = SparkContext(conf=conf)
 sc.setLogLevel("WARN")
 
 C = None    # set of centers
-NP_2FLOAT64 = np.dtype((np.float64, 2))
+
+NP_2FLOAT64 = np.dtype((np.float64, 2)) # type for the points (x, y), float64
 
 
 def main():
@@ -46,11 +47,11 @@ def SequentialFFT(P, K):
     # returns a set C of K centers
     # O(|P| * K) time complexity
 
-    # we used numpy in order to make the operation more efficient for large datasets
+    # we used NumPy in order to make the operation more efficient for large datasets
     C = np.zeros(K, dtype=np.uint32)
     C[0] = np.random.randint(0, P.shape[0])
     first_center_id = P[C[0]]
-    # P and d have share the same indexes
+    # P and d share the same indexes
     d = np.linalg.norm(P - first_center_id, axis=1) # distance from the first center
     new_c_id = np.argmax(d, axis=0)
     for i in range(1, K):
@@ -74,7 +75,7 @@ def MRFFT(P, K):
     end_time_ns = time.time_ns()
     print("Running time of MRFFT Round 1 =", (end_time_ns - start_time_ns) / (10 ** 6), "ms")
 
-    # obtain the centers from SequentialFFT
+    # obtain centers from SequentialFFT
     global C
     start_time_ns = time.time_ns()
     C = FFTround2(coreset.collect(), K)
@@ -94,12 +95,14 @@ def MRFFT(P, K):
 
 def FFTround1(P, K):
     # compute the coreset of every partition with FFT
+
     return P\
             .mapPartitions(lambda p: SequentialFFT(np.fromiter(p, dtype=NP_2FLOAT64), K))
 
 
 def FFTround2(coreset, K):
-    # obtain the centers from SequentialFFT
+    # obtain centers from SequentialFFT
+
     coreset = np.array(coreset, dtype=np.float64)
     centers = SequentialFFT(coreset, K)
     centers = np.array(centers, dtype=np.float64) 
@@ -109,6 +112,7 @@ def FFTround2(coreset, K):
 
 def FFTround3(points):
     # compute the radius of the clustering induced by the centers
+
     return points\
         .map(lambda pt: FFTmap_round3(np.array(pt)))\
         .reduceByKey(lambda r1, r2: r1 if r1 > r2 else r2)  # faster than max(r1, r2)
@@ -116,8 +120,9 @@ def FFTround3(points):
 
 def FFTmap_round3(point):
     # returns the distance between the point and the closest center "dist(x,C)"
+
     global C
-    local_C = C.value # for speeding up the computation
+    local_C = C.value   # for speeding up the computation
     return (0, np.min(np.linalg.norm(local_C - point, axis=1)))  # 0 is a dummy key to then group all the distances together
 
 
