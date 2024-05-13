@@ -52,13 +52,13 @@ def SequentialFFT(P, K):
     first_center_id = P[C[0]]
     # P and d have share the same indexes
     d = np.linalg.norm(P - first_center_id, axis=1) # distance from the first center
-    c_id = np.argmax(d, axis=0)
+    new_c_id = np.argmax(d, axis=0)
     for i in range(1, K):
-        center = P[c_id]
-        C[i] = c_id
+        center = P[new_c_id]
+        C[i] = new_c_id
         d_new_center = np.linalg.norm(P - center, axis=1)
         d = np.minimum(d, d_new_center) # pairwise minimum
-        c_id = np.argmax(d, axis=0)
+        new_c_id = np.argmax(d, axis=0)
     return P[C].tolist()
 
 
@@ -72,12 +72,14 @@ def MRFFT(P, K):
     coreset = FFTround1(P, K).persist(storageLevel=StorageLevel.MEMORY_AND_DISK)
     coreset.count() # force the computation of the RDD
     end_time_ns = time.time_ns()
-    print("Running time of MRFFT Round 1 =", (end_time_ns - start_time_ns) / (10 ** 6), "ms")   # TODO print only an integer?
+    print("Running time of MRFFT Round 1 =", (end_time_ns - start_time_ns) / (10 ** 6), "ms")
 
     # obtain the centers from SequentialFFT
+    global C
     start_time_ns = time.time_ns()
     C = FFTround2(coreset.collect(), K)
     end_time_ns = time.time_ns()
+    C = sc.broadcast(C)
     print("Running time of MRFFT Round 2 =", (end_time_ns - start_time_ns) / (10 ** 6), "ms")
 
     # compute the radius R (float) of the clustering induced by the centers
@@ -99,12 +101,9 @@ def FFTround1(P, K):
 def FFTround2(coreset, K):
     # obtain the centers from SequentialFFT
     coreset = np.array(coreset, dtype=np.float64)
-    centers = SequentialFFT(coreset, K) # TODO not sure why dtype is not NP_2FLOAT64, but it works
+    centers = SequentialFFT(coreset, K)
     centers = np.array(centers, dtype=np.float64) 
-    print("Centers =", centers)
 
-    global C
-    C = sc.broadcast(centers)
     return centers
 
 
