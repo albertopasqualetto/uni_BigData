@@ -1,8 +1,7 @@
 from pyspark import SparkContext, SparkConf, StorageLevel
 import sys
 import time
-import random as rnd
-import math
+import numpy as np
 
 conf = SparkConf().setAppName('G007HW2')
 conf.set("spark.locality.wait", "0s")
@@ -10,6 +9,8 @@ sc = SparkContext(conf=conf)
 sc.setLogLevel("WARN")
 
 C = None    # set of centers
+NP_2FLOAT64 = np.dtype((np.float64, 2))
+
 
 def main():
     argc = len(sys.argv)
@@ -43,85 +44,81 @@ def SequentialFFT(P, K):
     # P is the list of points
     # K is the number of clusters
     # returns a set C of K centers
-    # O(|P|*K)
-    S = [rnd.choice(P)]
-    #S=[P[0]]
-    d = [math.dist(k, S[0]) for k in P]
-    for _ in range(1, K):
-        c_id = max(range(len(d)), key=d.__getitem__)
-        center = P[c_id]
-        S.append(center)
-        for idx, p in enumerate(P):
-            val = math.dist(p, center)
-            if val < d[idx]:
-                d[idx] = val
-            #d[idx] = min(math.dist(p, center), d[idx])
-    #print(S)
-    return S
+    # O(|P| * K) time complexity
+
+    # we used numpy in order to make the operation more efficient for large datasets
+    C = np.zeros(K, dtype=np.uint32)
+    C[0] = np.random.randint(0, P.shape[0])
+    first_center_id = P[C[0]]
+    # P and d have share the same indexes
+    d = np.linalg.norm(P - first_center_id, axis=1) # distance from the first center
+    new_c_id = np.argmax(d, axis=0)
+    for i in range(1, K):
+        center = P[new_c_id]
+        C[i] = new_c_id
+        d_new_center = np.linalg.norm(P - center, axis=1)
+        d = np.minimum(d, d_new_center) # pairwise minimum
+        new_c_id = np.argmax(d, axis=0)
+    return P[C].tolist()
 
 
 def MRFFT(P, K):
     # P is the list of points
     # K is the number of clusters
     # D is the radius (float)
+
+    # compute the coreset
     start_time_ns = time.time_ns()
     coreset = FFTround1(P, K).persist(storageLevel=StorageLevel.MEMORY_AND_DISK)
     coreset.count() # force the computation of the RDD
     end_time_ns = time.time_ns()
     print("Running time of MRFFT Round 1 =", (end_time_ns - start_time_ns) / (10 ** 6), "ms")
-    #print("Coreset = ", coreset)
+
+    # obtain the centers from SequentialFFT
+    global C
     start_time_ns = time.time_ns()
-    centers = FFTround2(coreset.collect(), K)
+    C = FFTround2(coreset.collect(), K)
     end_time_ns = time.time_ns()
+    C = sc.broadcast(C)
     print("Running time of MRFFT Round 2 =", (end_time_ns - start_time_ns) / (10 ** 6), "ms")
-    #print("Centers = ", centers)
+
+    # compute the radius R (float) of the clustering induced by the centers
     start_time_ns = time.time_ns()
-    D = FFTround3(P).collect()[0][1]
+    R = FFTround3(P).collect()[0][1]
     end_time_ns = time.time_ns()
     print("Running time of MRFFT Round 3 =", (end_time_ns - start_time_ns) / (10 ** 6), "ms")
-    print("Radius =", D)
-    return D
+
+    print("Radius =", R)
+    return R
 
 
 def FFTround1(P, K):
-    # compute the coreset
-    # map P into L subsets of equal size
-    # reduce every subset with FFT
+    # compute the coreset of every partition with FFT
     return P\
-            .mapPartitions(lambda p: SequentialFFT(list(p), K))
+            .mapPartitions(lambda p: SequentialFFT(np.fromiter(p, dtype=NP_2FLOAT64), K))
 
 
 def FFTround2(coreset, K):
     # obtain the centers from SequentialFFT
-    # empty map
-    # compute the centers
+    coreset = np.array(coreset, dtype=np.float64)
     centers = SequentialFFT(coreset, K)
+    centers = np.array(centers, dtype=np.float64) 
 
-    global C
-    C = sc.broadcast(centers)
     return centers
 
 
 def FFTround3(points):
-    # compute the radius R (float) of the clustering induced by the centers
-    global C
+    # compute the radius of the clustering induced by the centers
     return points\
-        .map(lambda pt: FFTmap_round3(pt, C))\
-        .reduceByKey(lambda r1, r2: max(r1, r2))
+        .map(lambda pt: FFTmap_round3(np.array(pt)))\
+        .reduceByKey(lambda r1, r2: r1 if r1 > r2 else r2)  # faster than max(r1, r2)
 
 
-def FFTmap_round3(point, C):
+def FFTmap_round3(point):
     # returns the distance between the point and the closest center "dist(x,C)"
-    local_C = C.value
-    nearest_center = min(local_C, key=lambda c: math.dist(point, c))
-    return (0, math.dist(point, nearest_center)) # 0 is a dummy key to then group all the distances together
-
-
-# returns the Euclidean distance between two points p1 and p2 expressed as tuples
-# def squared_distance(p1, p2):
-#     d1 = p1[0]-p2[0]
-#     d2 = p1[1]-p2[1]
-#     return (d1*d1 + d2*d2)
+    global C
+    local_C = C.value # for speeding up the computation
+    return (0, np.min(np.linalg.norm(local_C - point, axis=1)))  # 0 is a dummy key to then group all the distances together
 
 
 # ApproxOutliers #######################################################################################################
@@ -136,9 +133,6 @@ def MRApproxOutliers(inputPoints, D, M):
         results[certainty] = v
     print("Number of sure outliers =", results['outliers'][1] if 'outliers' in results.keys() else 0)
     print("Number of uncertain points =", results['uncertain'][1] if 'uncertain' in results.keys() else 0)
-    #outputs = points_per_cell.collect()
-    # for i in range(0, len(outputs)):
-    #     print(f"Cell: ({outputs[i][0][0]},{outputs[i][0][1]})  Size = {outputs[i][1]}")
     print("Running time of MRApproxOutliers =", (end_time_ns - start_time_ns) / (10 ** 6), "ms")
 
 
