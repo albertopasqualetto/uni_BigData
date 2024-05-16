@@ -1,0 +1,120 @@
+2 executors (too much time due to crowded env)
+/data/BDC2324/artificial100M_9_100.csv M=10 K=110 L=16
+Number of points = 100000108
+Running time of MRFFT Round 1 = 337783.403244 ms
+Running time of MRFFT Round 2 = 77740.30571 ms
+Running time of MRFFT Round 3 = 618825.905621 ms
+Radius = 1.9953207762161946
+Number of sure outliers = 93
+Number of uncertain points = 4
+Running time of MRApproxOutliers = 61784.875842 ms
+2 executors (too much time due to crowded env)
+/data/BDC2324/artificial100M_9_100.csv M=10 K=110 L=16
+Number of points = 100000108
+Running time of MRFFT Round 1 = 425282.453876 ms
+Running time of MRFFT Round 2 = 207719.998763 ms
+Running time of MRFFT Round 3 = 610516.665622 ms
+Radius = 1.911284908118094
+Number of sure outliers = 93
+Number of uncertain points = 4
+Running time of MRApproxOutliers = 63541.18736 ms
+2 executors (too much time due to crowded env)
+/data/BDC2324/artificial100M_9_100.csv M=10 K=110 L=16
+Number of points = 100000108
+Running time of MRFFT Round 1 = 352627.185301 ms
+Running time of MRFFT Round 2 = 77408.327242 ms
+Running time of MRFFT Round 3 = 603182.058031 ms
+Radius = 2.2213403611333415
+Number of sure outliers = 91
+Number of uncertain points = 5
+Running time of MRApproxOutliers = 61504.173392 ms
+4 executors
+/data/BDC2324/artificial100M_9_100.csv M=10 K=110 L=16
+Number of points = 100000108
+Running time of MRFFT Round 1 = 111171.750541 ms
+Running time of MRFFT Round 2 = 78.269979 ms
+Running time of MRFFT Round 3 = 304313.613146 ms
+Radius = 2.2226650669860275
+Number of sure outliers = 91
+Number of uncertain points = 6
+Running time of MRApproxOutliers = 31954.567051 ms
+4 executors
+/data/BDC2324/artificial100M_9_100.csv M=10 K=110 L=16
+Number of points = 100000108
+Running time of MRFFT Round 1 = 109476.428944 ms
+Running time of MRFFT Round 2 = 88.382386 ms
+Running time of MRFFT Round 3 = 331732.31133 ms
+Radius = 2.157509907277366
+Number of sure outliers = 91
+Number of uncertain points = 6
+Running time of MRApproxOutliers = 31282.568389 ms
+4 executors
+/data/BDC2324/artificial100M_9_100.csv M=10 K=110 L=16
+Number of points = 100000108
+Running time of MRFFT Round 1 = 106550.415474 ms
+Running time of MRFFT Round 2 = 70.343004 ms
+Running time of MRFFT Round 3 = 303251.369803 ms
+Radius = 2.2209853669036197
+Number of sure outliers = 91
+Number of uncertain points = 6
+Running time of MRApproxOutliers = 31387.012645 ms
+8 executors
+/data/BDC2324/artificial100M_9_100.csv M=10 K=110 L=16
+Number of points = 100000108
+Running time of MRFFT Round 1 = 54937.574159 ms
+Running time of MRFFT Round 2 = 71.658651 ms
+Running time of MRFFT Round 3 = 152682.999792 ms
+Radius = 2.1644521246726676
+Number of sure outliers = 91
+Number of uncertain points = 5
+Running time of MRApproxOutliers = 16086.344176 ms
+8 executors
+/data/BDC2324/artificial100M_9_100.csv M=10 K=110 L=16
+Number of points = 100000108
+Running time of MRFFT Round 1 = 55129.673066 ms
+Running time of MRFFT Round 2 = 74.074646 ms
+Running time of MRFFT Round 3 = 155587.773098 ms
+Radius = 2.220943268073277
+Number of sure outliers = 91
+Number of uncertain points = 6
+Running time of MRApproxOutliers = 16090.152917 ms
+8 executors
+/data/BDC2324/artificial100M_9_100.csv M=10 K=110 L=16
+Number of points = 100000108
+Running time of MRFFT Round 1 = 55090.943217 ms
+Running time of MRFFT Round 2 = 58.268242 ms
+Running time of MRFFT Round 3 = 155600.308716 ms
+Radius = 2.2213160513533423
+Number of sure outliers = 91
+Number of uncertain points = 5
+Running time of MRApproxOutliers = 15888.594034 ms
+16 executors
+/data/BDC2324/artificial100M_9_100.csv M=10 K=110 L=16
+Number of points = 100000108
+Running time of MRFFT Round 1 = 27224.971358 ms
+Running time of MRFFT Round 2 = 74.173042 ms
+Running time of MRFFT Round 3 = 76797.411847 ms
+Radius = 2.2186234470950663
+Number of sure outliers = 90
+Number of uncertain points = 7
+Running time of MRApproxOutliers = 8506.854839 ms
+16 executors
+/data/BDC2324/artificial100M_9_100.csv M=10 K=110 L=16
+Number of points = 100000108
+Running time of MRFFT Round 1 = 26833.009266 ms
+Running time of MRFFT Round 2 = 96.011119 ms
+Running time of MRFFT Round 3 = 81577.123477 ms
+Radius = 2.2197867014648054
+Number of sure outliers = 90
+Number of uncertain points = 7
+Running time of MRApproxOutliers = 8412.170261 ms
+16 executors
+/data/BDC2324/artificial100M_9_100.csv M=10 K=110 L=16
+Number of points = 100000108
+Running time of MRFFT Round 1 = 25736.531677 ms
+Running time of MRFFT Round 2 = 116.093347 ms
+Running time of MRFFT Round 3 = 78829.164142 ms
+Radius = 2.2198220649412406
+Number of sure outliers = 90
+Number of uncertain points = 7
+Running time of MRApproxOutliers = 8563.240378 ms

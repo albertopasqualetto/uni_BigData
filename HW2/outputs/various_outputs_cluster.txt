@@ -73,3 +73,32 @@ Number of sure outliers = 90
 Number of uncertain points = 7
 Running time of MRApproxOutliers = 62811.127532 ms
 
+/data/BDC2324/artificial100M_9_100.csv M=10 K=110 L=16 (2 executors, without adding memory)
+Number of points = 100000108
+Running time of MRFFT Round 1 = 204041.000478 ms
+Running time of MRFFT Round 2 = 108.081334 ms
+Running time of MRFFT Round 3 = 626746.688206 ms
+Radius = 1.9807963045199766
+Number of sure outliers = 92
+Number of uncertain points = 4
+Running time of MRApproxOutliers = 61658.647422 ms
+
+/data/BDC2324/artificial100M_9_100.csv M=10 K=110 L=16 (2 executors, without adding memory)
+Number of points = 100000108
+Running time of MRFFT Round 1 = 202255.277959 ms
+Running time of MRFFT Round 2 = 76.603547 ms
+Running time of MRFFT Round 3 = 599675.610283 ms
+Radius = 2.031162228872917
+Number of sure outliers = 92
+Number of uncertain points = 6
+Running time of MRApproxOutliers = 61103.348577 ms
+
+/data/BDC2324/artificial50M_9_100.csv M=10 K=110 L=16 (2 executors)
+Number of points = 50000104
+Running time of MRFFT Round 1 = 98328.151986 ms
+Running time of MRFFT Round 2 = 91.248707 ms
+Running time of MRFFT Round 3 = 300937.85936 ms
+Radius = 2.0285721579475493
+Number of sure outliers = 99
+Number of uncertain points = 1
+Running time of MRApproxOutliers = 33424.992253 ms
