@@ -25,8 +25,14 @@ def stickySampling(batch_items, n, phi, epsilon, delta):
 def reservoirSampling():
     pass #Alberto
 
-def bruteForce():
-    pass  #Sproc
+def bruteForce(batch_items, n, phi):
+    for key, value in batch_items:
+        if key in histogram.keys():
+            histogram[key] = histogram[key] + value
+        else:
+            histogram[key] = value
+    return histogram
+    
 
 # Operations to perform after receiving an RDD 'batch' at time 'time'
 def process_batch(time, batch):
@@ -41,13 +47,14 @@ def process_batch(time, batch):
     batch_items = batch.map(lambda s: (int(s), 1)).reduceByKey(lambda i1, i2: i1+i2).collectAsMap()
 
     # Update the streaming state
-    for key in batch_items:
-        if key not in histogram:
-            histogram[key] = 1
+    # for key in batch_items:
+    #     if key not in histogram:
+    #         histogram[key] = 1
     # call functions for the batch
     #stickySampling(batch_items, n, phi, epsilon, delta)
-    reservoirSampling()
-    bruteForce()
+    #reservoirSampling()
+    #histogram = bruteForce(batch_items, n, phi)
+    # select only histogram[k]>=n*phi when printing
             
     # If we wanted, here we could run some additional code on the global histogram
     if batch_size > 0:
