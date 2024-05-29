@@ -3,12 +3,24 @@ from pyspark.streaming import StreamingContext
 from pyspark import StorageLevel
 import threading
 import sys
+import numpy as np
+import random as rnd
 
 # After how many items should we stop?
 THRESHOLD = -1 # To be set via command line
 
-def stickySampling():
-    pass #Michela
+def stickySampling(batch_items, n, phi, epsilon, delta):
+    S = {} # Empty hash table
+    r = np.log(1/(delta*phi)) / (epsilon)
+    p = r/n
+    for key in batch_items:
+        if key in S:
+            S[key] = S[key] + 1
+        else:
+            x = rnd.uniform(0, 1) # Random number in [0,1]
+            if x <= p:
+                S[key] = 1
+    return S
 
 def reservoirSampling():
     pass #Alberto
@@ -33,7 +45,7 @@ def process_batch(time, batch):
         if key not in histogram:
             histogram[key] = 1
     # call functions for the batch
-    stickySampling()
+    #stickySampling(batch_items, n, phi, epsilon, delta)
     reservoirSampling()
     bruteForce()
             
