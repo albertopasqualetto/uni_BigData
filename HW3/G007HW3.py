@@ -7,7 +7,7 @@ import numpy as np
 import random as rnd
 
 # After how many items should we stop?
-THRESHOLD = -1 # To be set via command line
+n = -1 # To be set via command line
 
 def stickySampling(batch_items, n, phi, epsilon, delta):
     S = {} # Empty hash table
@@ -33,8 +33,8 @@ def process_batch(time, batch):
     # We are working on the batch at time `time`.
     global streamLength, histogram
     batch_size = batch.count()
-    # If we already have enough points (> THRESHOLD), skip this batch.
-    if streamLength[0]>=THRESHOLD:
+    # If we already have enough points (> n), skip this batch.
+    if streamLength[0]>=n:
         return
     streamLength[0] += batch_size
     # Extract items and frequency from the batch
@@ -53,20 +53,25 @@ def process_batch(time, batch):
     if batch_size > 0:
         print("Batch size at time [{0}] is: {1}".format(time, batch_size))
 
-    if streamLength[0] >= THRESHOLD:
+    if streamLength[0] >= n:
         stopping_condition.set()
         
 
 
 if __name__ == '__main__':
-    assert len(sys.argv) == 3, "USAGE: port, threshold"
 
-# Input parameters:
-# An integer 𝑛: the number of items of the stream to be processed
-# A float phi: the frequency thresold in (0,1)
-# A float epsilon: the accuracy parameter in (0,1)
-# A float delta: the confidence parameter in (0,1)
-# An integer portExp: the port number
+    argc = len(sys.argv)
+    if argc != 6:
+        print('Usage: python3 G007HW3.py <n> <phi> <epsilon> <delta> <portExp>')
+        sys.exit(1)
+
+    n = sys.argv[1]               # An integer 𝑛: the number of items of the stream to be processed
+    phi = int(sys.argv[2])        # A float phi: the frequency thresold in (0,1)
+    epsilon = int(sys.argv[3])    # A float epsilon: the accuracy parameter in (0,1)
+    delta = int(sys.argv[4])      # A float delta: the confidence parameter in (0,1)
+    portExp = int(sys.argv[5])    # An integer portExp: the port number   
+
+    # # print(f"n={n} phi={phi} epsilon={epsilon} delta={delta} portExp={portExp}")
 
     # IMPORTANT: when running locally, it is *fundamental* that the
     # `master` setting is "local[*]" or "local[n]" with n > 1, otherwise
@@ -97,17 +102,6 @@ if __name__ == '__main__':
     # We cannot call `ssc.stop()` directly in `foreachRDD` because it might lead
     # to deadlocks.
     stopping_condition = threading.Event()
-    
-    
-    # &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-    # INPUT READING
-    # &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-
-    portExp = int(sys.argv[1])
-    print("Receiving data from port =", portExp)
-    
-    THRESHOLD = int(sys.argv[2])
-    print("Threshold = ", THRESHOLD)
         
     # &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
     # DEFINING THE REQUIRED DATA STRUCTURES TO MAINTAIN THE STATE OF THE STREAM
