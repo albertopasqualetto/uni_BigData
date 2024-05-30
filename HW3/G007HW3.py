@@ -5,12 +5,39 @@ import threading
 import sys
 import numpy as np
 
+# What to ask monday:
+# - Exception in thread "receiver-supervisor-future-0" java.lang.InterruptedException: sleep interrupted
+	# at java.base/java.lang.Thread.sleep(Native Method)
+	# at org.apache.spark.streaming.receiver.ReceiverSupervisor.$anonfun$restartReceiver$1(ReceiverSupervisor.scala:196)
+	# at scala.runtime.java8.JFunction0$mcV$sp.apply(JFunction0$mcV$sp.java:23)
+	# at scala.concurrent.Future$.$anonfun$apply$1(Future.scala:659)
+	# at scala.util.Success.$anonfun$map$1(Try.scala:255)
+	# at scala.util.Success.map(Try.scala:213)
+	# at scala.concurrent.Future.$anonfun$map$1(Future.scala:292)
+	# at scala.concurrent.impl.Promise.liftedTree1$1(Promise.scala:33)
+	# at scala.concurrent.impl.Promise.$anonfun$transform$1(Promise.scala:33)
+	# at scala.concurrent.impl.CallbackRunnable.run(Promise.scala:64)
+	# at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1136)
+	# at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:635)
+	# at java.base/java.lang.Thread.run(Thread.java:842)
+# - Approximate the len of the stream with n because we need it in the sticky sampling?
+# - Sticky sampling: if we have already n items processed, we should stop the computation?
 
 # After how many items should we stop?
 n = -1  # To be set via command line
+# &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+# DEFINING THE REQUIRED DATA STRUCTURES TO MAINTAIN THE STATE OF THE STREAM
+# &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+streamLength = [0]  # Stream length (an array to be passed by reference)
+S_exact = {}
+S_reservoir = []
+t_reservoir = 1
+S_sticky = {}  # Hash Table
+t_sticky = 1  # number of items processed
 
 
-def exactStep(batch_items, S_exact):
+def exactStep(batch_items):
+    global S_exact
     local_batch_items = batch_items.map(lambda s: (s, 1)).reduceByKey(lambda i1, i2: i1 + i2).collectAsMap()
     for key in local_batch_items:
         if key in S_exact:
@@ -22,8 +49,8 @@ def exactStep(batch_items, S_exact):
 def reservoirSamplingStep(item):
     global phi, S_reservoir, t_reservoir
     m=1/phi
-    print("step:", t_reservoir, "reservoir:", S_reservoir) if len(S_reservoir) < m else None
-    print("step", id(S_reservoir))
+    #print("step:", t_reservoir, "reservoir:", S_reservoir)
+    #print("step id:", id(S_reservoir))
     # print("step:", t_reservoir, "reservoir:", S_reservoir)
     if t_reservoir <= m:
         S_reservoir.append(item)
@@ -36,8 +63,9 @@ def reservoirSamplingStep(item):
     t_reservoir += 1
 
 
-def stickySamplingStep(item, n, phi, epsilon, delta, S_sticky):
-    global t_sticky
+def stickySamplingStep(item, n, phi, epsilon, delta):
+    global t_sticky, S_sticky
+    #print('method:', S_sticky)
     if t_sticky > n:
         return
     r = np.log(1/(delta*phi)) / epsilon
@@ -49,6 +77,7 @@ def stickySamplingStep(item, n, phi, epsilon, delta, S_sticky):
         x = np.random.uniform() # Random number in [0,1]
         if x <= p:
             S_sticky[item] = 1
+    t_sticky+=1
 
 
 # Operations to perform after receiving an RDD 'batch' at time 'time'
@@ -56,7 +85,7 @@ def process_batch(time, batch):
     # We are working on the batch at time `time`.
     global streamLength, S_exact
     global S_reservoir, t_reservoir, S_sticky, t_sticky
-    print("batch", id(S_reservoir))
+    #print("batch", id(S_reservoir))
     batch_size = batch.count()
     # If we are about to exceed the number of items we need to process, limit the batch to the max number n.    # TODO use this limit for all algorithms or just for sticky as written down in the call?
     # if streamLength[0] >= n >= streamLength[0] + batch_size:
@@ -70,16 +99,21 @@ def process_batch(time, batch):
 
     streamLength[0] += batch_size
 
-    # Update the streaming state
-    exactStep(batch, S_exact)
-    batch.foreach(reservoirSamplingStep)
-    # reservoirSamplingStep(batch_items, 1 / phi, t, S_reservoir)
-    batch.foreach(lambda item: stickySamplingStep(item, n, phi, epsilon, delta, S_sticky) if t_sticky < n else None)
-    # stickySamplingStep(batch_items, n, phi, epsilon, delta, S_sticky)
-
     # If we wanted, here we could run some additional code on the global histogram
     if batch_size > 0:
         print("Batch size at time [{0}] is: {1}".format(time, batch_size))
+
+    # Update the streaming state
+    exactStep(batch)
+    for item in batch.collect():
+        reservoirSamplingStep(item)
+        stickySamplingStep(item, n, phi, epsilon, delta)
+    # batch.foreach(reservoirSamplingStep)
+    # print('main res', S_reservoir)
+    # reservoirSamplingStep(batch_items, 1 / phi, t, S_reservoir)
+    # batch.foreach(lambda item: stickySamplingStep(item, n, phi, epsilon, delta))
+    # print('main',S_sticky)
+    # stickySamplingStep(batch_items, n, phi, epsilon, delta, S_sticky)
 
     if streamLength[0] >= n:
         stopping_condition.set()
@@ -96,7 +130,6 @@ def compute_print_exact(S_exact):
 def compute_print_reservoir(S_reservoir):
     print("Reservoir sampling length:", len(S_reservoir))
     global sc
-    # TODO All items in the sample computed with Reservoir Sampling, in increasing order (one item per line) ?
     S_reservoir = sc.parallelize(S_reservoir).map(lambda x: (x, 1)).reduceByKey(lambda i1, i2: i1 + i2).collectAsMap()  # distinct items
     print("Reservoir sampling:")
     for k in sorted(S_reservoir.keys()):
@@ -149,16 +182,6 @@ def main():
     # to deadlocks.
     stopping_condition = threading.Event()
 
-    # &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-    # DEFINING THE REQUIRED DATA STRUCTURES TO MAINTAIN THE STATE OF THE STREAM
-    # &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-    streamLength = [0]  # Stream length (an array to be passed by reference)
-    S_exact = {}
-    S_reservoir = []
-    t_reservoir = 1
-    S_sticky = {}  # Hash Table
-    t_sticky = 1  # number of items processed
-
     # CODE TO PROCESS AN UNBOUNDED STREAM OF DATA IN BATCHES
     stream = ssc.socketTextStream("algo.dei.unipd.it", portExp, StorageLevel.MEMORY_AND_DISK)
     # For each batch, to the following.
@@ -178,7 +201,6 @@ def main():
     ssc.stop(False, True)
     print("Streaming engine stopped")
     # COMPUTE AND PRINT FINAL STATISTICS
-    print("main:", id(S_reservoir))
     compute_print_exact(S_exact)
     compute_print_reservoir(S_reservoir)
     compute_print_sticky(S_sticky)
