@@ -4,43 +4,14 @@ from pyspark import StorageLevel
 import threading
 import sys
 import numpy as np
-import random as rnd
-from collections import defaultdict
+
 
 # After how many items should we stop?
 n = -1  # To be set via command line
 
 
-def stickySamplingStep(batch_items, n, phi, epsilon, delta, S_sticky):
-    local_batch_items = batch_items.collectAsMap()
-    r = np.log(1/(delta*phi)) / (epsilon)
-    p = r/n
-    for key in local_batch_items:
-        if key in S_sticky:
-            S_sticky[key] = S_sticky[key] + 1
-        else:
-            x = rnd.uniform(0, 1) # Random number in [0,1]
-            if x <= p:
-                S_sticky[key] = 1
-
-
-def reservoirSamplingStep(batch_items, phi, S_reservoir):
-    local_batch_items = batch_items.collectAsMap()
-    m = 1 / phi
-    t = 0
-
-    for key in local_batch_items:
-        if t <= m:
-            S_reservoir[key] = 1
-        else:
-            x = rnd.uniform(0, 1)  # Random number in [0,1]
-            p = m / t
-            if x <= p:
-                S_reservoir[key] = 1
-
-
 def exactStep(batch_items, S_exact):
-    local_batch_items = batch_items.reduceByKey(lambda i1, i2: i1 + i2).collectAsMap()
+    local_batch_items = batch_items.map(lambda s: (s, 1)).reduceByKey(lambda i1, i2: i1 + i2).collectAsMap()
     for key in local_batch_items:
         if key in S_exact:
             S_exact[key] = S_exact[key] + local_batch_items[key]
@@ -48,28 +19,63 @@ def exactStep(batch_items, S_exact):
             S_exact[key] = local_batch_items[key]
 
 
+def reservoirSamplingStep(item):
+    global phi, S_reservoir, t_reservoir
+    m=1/phi
+    print("step:", t_reservoir, "reservoir:", S_reservoir) if len(S_reservoir) < m else None
+    print("step", id(S_reservoir))
+    # print("step:", t_reservoir, "reservoir:", S_reservoir)
+    if t_reservoir <= m:
+        S_reservoir.append(item)
+    else:
+        x = np.random.uniform() # Random number in [0,1]
+        p = np.ceil(m / t_reservoir)
+        if x <= p:
+            S_reservoir.pop(np.random.randint(0, m))
+            S_reservoir.append(item)
+    t_reservoir += 1
+
+
+def stickySamplingStep(item, n, phi, epsilon, delta, S_sticky):
+    global t_sticky
+    if t_sticky > n:
+        return
+    r = np.log(1/(delta*phi)) / epsilon
+    p = r/n
+
+    if item in S_sticky:
+        S_sticky[item] = S_sticky[item] + 1
+    else:
+        x = np.random.uniform() # Random number in [0,1]
+        if x <= p:
+            S_sticky[item] = 1
+
+
 # Operations to perform after receiving an RDD 'batch' at time 'time'
 def process_batch(time, batch):
     # We are working on the batch at time `time`.
     global streamLength, S_exact
-    global S_sticky, S_reservoir
+    global S_reservoir, t_reservoir, S_sticky, t_sticky
+    print("batch", id(S_reservoir))
     batch_size = batch.count()
-    # If we are about to exceed the number of items we need to process, limit the batch to the max number n.
-    if streamLength[0] >= n and streamLength[0] + batch_size <= n:
-        diff = streamLength[0] + batch_size - n
-        # batch = batch.toDF().limit(n).rdd
+    # If we are about to exceed the number of items we need to process, limit the batch to the max number n.    # TODO use this limit for all algorithms or just for sticky as written down in the call?
+    # if streamLength[0] >= n >= streamLength[0] + batch_size:
+    #     diff = streamLength[0] + batch_size - n
+    #     batch = batch.zipWithIndex().filter(lambda x: x[1] < diff).map(lambda x: x[0])  # this will trigger an action (strict less than since index starts from 0)
     # If we already have enough points (> n), skip this batch.
-    elif streamLength[0] >= n:
+    if streamLength[0] >= n:
         return
 
+    batch = batch.map(lambda s: int(s))
+
     streamLength[0] += batch_size
-    # Extract items and frequency from the batch
-    batch_items = batch.map(lambda s: (int(s), 1))
 
     # Update the streaming state
-    exactStep(batch_items, S_exact)
-    reservoirSamplingStep(batch_items, phi, S_reservoir)
-    stickySamplingStep(batch_items, n, phi, epsilon, delta, S_sticky)
+    exactStep(batch, S_exact)
+    batch.foreach(reservoirSamplingStep)
+    # reservoirSamplingStep(batch_items, 1 / phi, t, S_reservoir)
+    batch.foreach(lambda item: stickySamplingStep(item, n, phi, epsilon, delta, S_sticky) if t_sticky < n else None)
+    # stickySamplingStep(batch_items, n, phi, epsilon, delta, S_sticky)
 
     # If we wanted, here we could run some additional code on the global histogram
     if batch_size > 0:
@@ -79,8 +85,7 @@ def process_batch(time, batch):
         stopping_condition.set()
 
 
-def print_exact():
-    global k
+def compute_print_exact(S_exact):
     S_exact_frequent = {k: v for k, v in sorted(S_exact.items()) if v >= n * phi}
     print("Exact frequent items length:", len(S_exact_frequent))
     print("Exact frequent items:")
@@ -88,15 +93,17 @@ def print_exact():
         print(k)
 
 
-def print_reservoir():
-    global k
+def compute_print_reservoir(S_reservoir):
+    print("Reservoir sampling length:", len(S_reservoir))
+    global sc
+    # TODO All items in the sample computed with Reservoir Sampling, in increasing order (one item per line) ?
+    S_reservoir = sc.parallelize(S_reservoir).map(lambda x: (x, 1)).reduceByKey(lambda i1, i2: i1 + i2).collectAsMap()  # distinct items
     print("Reservoir sampling:")
-    for k in S_reservoir.keys():
+    for k in sorted(S_reservoir.keys()):
         print(k)
 
 
-def extract_sticky():
-    global k
+def compute_print_sticky(S_sticky):
     print("Sticky sampling length:", len(S_sticky))
     S_sticky_frequent = {k: v for k, v in sorted(S_sticky.items()) if v >= (phi - epsilon) * n}
     print("Sticky sampling epsilon-approximate frequent items:")
@@ -104,34 +111,31 @@ def extract_sticky():
         print(k)
 
 
-if __name__ == '__main__':
+def main():
+    global n, phi, epsilon, delta, sc, stopping_condition, streamLength, S_exact, S_reservoir, t_reservoir, S_sticky, t_sticky
     argc = len(sys.argv)
     if argc != 6:
         print('Usage: python3 G007HW3.py <n> <phi> <epsilon> <delta> <portExp>')
         sys.exit(1)
-
-    n = int(sys.argv[1])            # An integer 𝑛: the number of items of the stream to be processed
-    phi = float(sys.argv[2])        # A float phi: the frequency thresold in (0,1)
-    epsilon = float(sys.argv[3])    # A float epsilon: the accuracy parameter in (0,1)
-    delta = float(sys.argv[4])      # A float delta: the confidence parameter in (0,1)
-    portExp = int(sys.argv[5])      # An integer portExp: the port number
-
+    n = int(sys.argv[1])  # An integer 𝑛: the number of items of the stream to be processed
+    phi = float(sys.argv[2])  # A float phi: the frequency threshold in (0,1)
+    epsilon = float(sys.argv[3])  # A float epsilon: the accuracy parameter in (0,1)
+    delta = float(sys.argv[4])  # A float delta: the confidence parameter in (0,1)
+    portExp = int(sys.argv[5])  # An integer portExp: the port number
     # IMPORTANT: when running locally, it is *fundamental* that the
     # `master` setting is "local[*]" or "local[n]" with n > 1, otherwise
     # there will be no processor running the streaming computation and your
     # code will crash with an out of memory (because the input keeps accumulating).
-    conf = SparkConf().setMaster("local[*]").setAppName("DistinctExample")
+    conf = SparkConf().setMaster("local[*]").setAppName('G007HW3')
     # If you get an OutOfMemory error in the heap consider to increase the
     # executor and drivers heap space with the following lines:
     conf = conf.set("spark.executor.memory", "4g").set("spark.driver.memory", "4g")
-
     # Here, with the duration you can control how large to make your batches.
     # Beware that the data generator we are using is very fast, so the suggestion
     # is to use batches of less than a second, otherwise you might exhaust the memory.
     sc = SparkContext(conf=conf)
     ssc = StreamingContext(sc, 0.01)  # Batch duration of 0.01 seconds
     ssc.sparkContext.setLogLevel("ERROR")
-
     # TECHNICAL DETAIL:
     # The streaming spark context and our code and the tasks that are spawned all
     # work concurrently. To ensure a clean shut down we use this semaphore.
@@ -148,11 +152,12 @@ if __name__ == '__main__':
     # &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
     # DEFINING THE REQUIRED DATA STRUCTURES TO MAINTAIN THE STATE OF THE STREAM
     # &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-
     streamLength = [0]  # Stream length (an array to be passed by reference)
     S_exact = {}
-    S_sticky = {}   # Hash Table
-    S_reservoir = defaultdict(int)
+    S_reservoir = []
+    t_reservoir = 1
+    S_sticky = {}  # Hash Table
+    t_sticky = 1  # number of items processed
 
     # CODE TO PROCESS AN UNBOUNDED STREAM OF DATA IN BATCHES
     stream = ssc.socketTextStream("algo.dei.unipd.it", portExp, StorageLevel.MEMORY_AND_DISK)
@@ -160,7 +165,6 @@ if __name__ == '__main__':
     # BEWARE: the `foreachRDD` method has "at least once semantics", meaning
     # that the same data might be processed multiple times in case of failure.
     stream.foreachRDD(lambda time, batch: process_batch(time, batch))
-
     # MANAGING STREAMING SPARK CONTEXT
     print("Starting streaming engine")
     ssc.start()
@@ -173,12 +177,16 @@ if __name__ == '__main__':
     # will be done.
     ssc.stop(False, True)
     print("Streaming engine stopped")
-
     # COMPUTE AND PRINT FINAL STATISTICS
-    print_exact()
-    print_reservoir()
-    extract_sticky()
+    print("main:", id(S_reservoir))
+    compute_print_exact(S_exact)
+    compute_print_reservoir(S_reservoir)
+    compute_print_sticky(S_sticky)
 
     # print("Number of items processed =", streamLength[0])
     # print("Number of distinct items =", len(S_exact))
     # print("Largest item =", max(S_exact.keys()))
+
+
+if __name__ == '__main__':
+    main()
