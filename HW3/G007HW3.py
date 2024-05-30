@@ -5,6 +5,7 @@ import threading
 import sys
 import numpy as np
 import random as rnd
+# from collections import defaultdict # defaultdict(int)
 
 # After how many items should we stop?
 n = -1 # To be set via command line
@@ -22,8 +23,20 @@ def stickySampling(batch_items, n, phi, epsilon, delta):
                 S[key] = 1
     return S
 
-def reservoirSampling():
-    pass #Alberto
+def reservoirSampling(batch_items, phi):
+    m = 1 / phi
+    S = {}
+    t = 0
+
+    p = m / t
+    for key in batch_items:
+        if t <= m:
+            S[key] = 1
+        else:
+            x = rnd.uniform(0, 1)  # Random number in [0,1]
+            if x <= p:
+                S[key] = 1
+
 
 def bruteForce(batch_items, n, phi):
     for key, value in batch_items:
