@@ -5,23 +5,8 @@ import threading
 import sys
 import numpy as np
 
-# What to ask monday:
-# - Exception in thread "receiver-supervisor-future-0" java.lang.InterruptedException: sleep interrupted
-	# at java.base/java.lang.Thread.sleep(Native Method)
-	# at org.apache.spark.streaming.receiver.ReceiverSupervisor.$anonfun$restartReceiver$1(ReceiverSupervisor.scala:196)
-	# at scala.runtime.java8.JFunction0$mcV$sp.apply(JFunction0$mcV$sp.java:23)
-	# at scala.concurrent.Future$.$anonfun$apply$1(Future.scala:659)
-	# at scala.util.Success.$anonfun$map$1(Try.scala:255)
-	# at scala.util.Success.map(Try.scala:213)
-	# at scala.concurrent.Future.$anonfun$map$1(Future.scala:292)
-	# at scala.concurrent.impl.Promise.liftedTree1$1(Promise.scala:33)
-	# at scala.concurrent.impl.Promise.$anonfun$transform$1(Promise.scala:33)
-	# at scala.concurrent.impl.CallbackRunnable.run(Promise.scala:64)
-	# at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1136)
-	# at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:635)
-	# at java.base/java.lang.Thread.run(Thread.java:842)
-# - Approximate the len of the stream with n because we need it in the sticky sampling?
-# - Sticky sampling: if we have already n items processed, we should stop the computation?
+
+# All 3 method: all items after the n-th one should be ignored
 
 # After how many items should we stop?
 n = -1  # To be set via command line
@@ -30,6 +15,7 @@ n = -1  # To be set via command line
 # &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 streamLength = [0]  # Stream length (an array to be passed by reference)
 S_exact = {}
+S = {}
 S_reservoir = []
 t_reservoir = 1
 S_sticky = {}  # Hash Table
@@ -37,21 +23,24 @@ t_sticky = 1  # number of items processed
 
 
 def exactStep(batch_items):
-    global S_exact
-    local_batch_items = batch_items.map(lambda s: (s, 1)).reduceByKey(lambda i1, i2: i1 + i2).collectAsMap()
-    for key in local_batch_items:
-        if key in S_exact:
-            S_exact[key] = S_exact[key] + local_batch_items[key]
+    global S
+    if len(S) > n:
+        return
+    elif len(S) + len(batch_items) > n:
+        diff = n - len(S)
+        batch_items =  batch_items[:diff]
+    for key in batch_items:
+        if key in S.keys():
+            S[key] = S[key] + 1
         else:
-            S_exact[key] = local_batch_items[key]
+            S[key] = 1
 
 
 def reservoirSamplingStep(item):
     global phi, S_reservoir, t_reservoir
     m=1/phi
-    #print("step:", t_reservoir, "reservoir:", S_reservoir)
-    #print("step id:", id(S_reservoir))
-    # print("step:", t_reservoir, "reservoir:", S_reservoir)
+    if t_reservoir > n:
+        return
     if t_reservoir <= m:
         S_reservoir.append(item)
     else:
@@ -65,7 +54,6 @@ def reservoirSamplingStep(item):
 
 def stickySamplingStep(item, n, phi, epsilon, delta):
     global t_sticky, S_sticky
-    #print('method:', S_sticky)
     if t_sticky > n:
         return
     r = np.log(1/(delta*phi)) / epsilon
@@ -85,9 +73,8 @@ def process_batch(time, batch):
     # We are working on the batch at time `time`.
     global streamLength, S_exact
     global S_reservoir, t_reservoir, S_sticky, t_sticky
-    #print("batch", id(S_reservoir))
     batch_size = batch.count()
-    # If we are about to exceed the number of items we need to process, limit the batch to the max number n.    # TODO use this limit for all algorithms or just for sticky as written down in the call?
+    # If we are about to exceed the number of items we need to process, limit the batch to the max number n.
     # if streamLength[0] >= n >= streamLength[0] + batch_size:
     #     diff = streamLength[0] + batch_size - n
     #     batch = batch.zipWithIndex().filter(lambda x: x[1] < diff).map(lambda x: x[0])  # this will trigger an action (strict less than since index starts from 0)
@@ -96,56 +83,67 @@ def process_batch(time, batch):
         return
 
     batch = batch.map(lambda s: int(s))
-
     streamLength[0] += batch_size
 
     # If we wanted, here we could run some additional code on the global histogram
     if batch_size > 0:
         print("Batch size at time [{0}] is: {1}".format(time, batch_size))
 
+    batch = batch.collect()
     # Update the streaming state
     exactStep(batch)
-    for item in batch.collect():
+    for item in batch:
         reservoirSamplingStep(item)
         stickySamplingStep(item, n, phi, epsilon, delta)
-    # batch.foreach(reservoirSamplingStep)
-    # print('main res', S_reservoir)
-    # reservoirSamplingStep(batch_items, 1 / phi, t, S_reservoir)
-    # batch.foreach(lambda item: stickySamplingStep(item, n, phi, epsilon, delta))
-    # print('main',S_sticky)
-    # stickySamplingStep(batch_items, n, phi, epsilon, delta, S_sticky)
 
     if streamLength[0] >= n:
         stopping_condition.set()
-
+        #print('received:',batch[:n])
 
 def compute_print_exact(S_exact):
-    S_exact_frequent = {k: v for k, v in sorted(S_exact.items()) if v >= n * phi}
-    print("Exact frequent items length:", len(S_exact_frequent))
+    # The size of the data structure used to compute the true frequent items
+    # The number of true frequent items
+    # The true frequent items, in increasing order (one item per line)
+    print("Data structure size:", len(S_exact)) # TODO understand what first point means
+    print("Exact frequent items length:", len(S_exact))
     print("Exact frequent items:")
-    for k in S_exact_frequent.keys():
+    for k in S_exact:
         print(k)
 
 
-def compute_print_reservoir(S_reservoir):
+def compute_print_reservoir(S_reservoir, S_exact):
+    # The size m of the Reservoir sample
+    # The number of estimated frequent items (i.e., distinct items in the sample)
+    # The estimated frequent items, in increasing order (one item per line). Next to each item print a "+" if the item is a true freuent one, and "-" otherwise.
     print("Reservoir sampling length:", len(S_reservoir))
     global sc
     S_reservoir = sc.parallelize(S_reservoir).map(lambda x: (x, 1)).reduceByKey(lambda i1, i2: i1 + i2).collectAsMap()  # distinct items
+    print("Number of approximate frequent items:", len(S_reservoir))
     print("Reservoir sampling:")
     for k in sorted(S_reservoir.keys()):
-        print(k)
+        if k in S_exact:
+            print(k, '+')
+        else:
+            print(k, '-')
 
 
-def compute_print_sticky(S_sticky):
+def compute_print_sticky(S_sticky, S_exact):
+    # The size of the Hash Table
+    # The number of estimated frequent items (i.e., the items considered frequent by Sticky sampling)
+    # The estimated frequent items, in increasing order (one item per line). Next to each item print a "+" if the item is a true freuent one, and "-" otherwise.
     print("Sticky sampling length:", len(S_sticky))
     S_sticky_frequent = {k: v for k, v in sorted(S_sticky.items()) if v >= (phi - epsilon) * n}
+    print("Number of approximate frequent items:", len(S_sticky_frequent))
     print("Sticky sampling epsilon-approximate frequent items:")
     for k in S_sticky_frequent.keys():
-        print(k)
+        if k in S_exact:
+            print(k, '+')
+        else:
+            print(k, '-')
 
 
 def main():
-    global n, phi, epsilon, delta, sc, stopping_condition, streamLength, S_exact, S_reservoir, t_reservoir, S_sticky, t_sticky
+    global S, n, phi, epsilon, delta, sc, stopping_condition, streamLength, S_exact, S_reservoir, t_reservoir, S_sticky, t_sticky
     argc = len(sys.argv)
     if argc != 6:
         print('Usage: python3 G007HW3.py <n> <phi> <epsilon> <delta> <portExp>')
@@ -200,10 +198,14 @@ def main():
     # will be done.
     ssc.stop(False, True)
     print("Streaming engine stopped")
+
     # COMPUTE AND PRINT FINAL STATISTICS
+    for k in sorted(S.keys()):
+        if S[k] >= n * phi:
+            S_exact[k] = S[k]
     compute_print_exact(S_exact)
-    compute_print_reservoir(S_reservoir)
-    compute_print_sticky(S_sticky)
+    compute_print_reservoir(S_reservoir, S_exact)
+    compute_print_sticky(S_sticky, S_exact)
 
     # print("Number of items processed =", streamLength[0])
     # print("Number of distinct items =", len(S_exact))
