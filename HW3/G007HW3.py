@@ -17,67 +17,49 @@ streamLength = [0]  # Stream length (an array to be passed by reference)
 S_exact = {}
 S = {}
 S_reservoir = []
-t_reservoir = 1
+t = 0 # number of item processed
 S_sticky = {}  # Hash Table
-t_sticky = 1  # number of items processed
 
 
-def exactStep(batch_items):
+def exactStep(item):
     global S
-    if len(S) > n:
-        return
-    elif len(S) + len(batch_items) > n:
-        diff = n - len(S)
-        batch_items =  batch_items[:diff]
-    for key in batch_items:
-        if key in S.keys():
-            S[key] = S[key] + 1
-        else:
-            S[key] = 1
+    if item in S.keys():
+        S[item] = S[item] + 1
+    else:
+        S[item] = 1
 
 
 def reservoirSamplingStep(item):
-    global phi, S_reservoir, t_reservoir
-    m=1/phi
-    if t_reservoir > n:
-        return
-    if t_reservoir <= m:
+    global phi, S_reservoir, t
+    m = 1 / phi
+    if t <= m:
         S_reservoir.append(item)
     else:
         x = np.random.uniform() # Random number in [0,1]
-        p = np.ceil(m / t_reservoir)
+        p = np.ceil(m / t)
         if x <= p:
             S_reservoir.pop(np.random.randint(0, m))
             S_reservoir.append(item)
-    t_reservoir += 1
 
 
 def stickySamplingStep(item, n, phi, epsilon, delta):
-    global t_sticky, S_sticky
-    if t_sticky > n:
-        return
+    global S_sticky
     r = np.log(1/(delta*phi)) / epsilon
     p = r/n
-
     if item in S_sticky:
         S_sticky[item] = S_sticky[item] + 1
     else:
         x = np.random.uniform() # Random number in [0,1]
         if x <= p:
             S_sticky[item] = 1
-    t_sticky+=1
 
 
 # Operations to perform after receiving an RDD 'batch' at time 'time'
 def process_batch(time, batch):
     # We are working on the batch at time `time`.
     global streamLength, S_exact
-    global S_reservoir, t_reservoir, S_sticky, t_sticky
+    global S_reservoir, S_sticky, t
     batch_size = batch.count()
-    # If we are about to exceed the number of items we need to process, limit the batch to the max number n.
-    # if streamLength[0] >= n >= streamLength[0] + batch_size:
-    #     diff = streamLength[0] + batch_size - n
-    #     batch = batch.zipWithIndex().filter(lambda x: x[1] < diff).map(lambda x: x[0])  # this will trigger an action (strict less than since index starts from 0)
     # If we already have enough points (> n), skip this batch.
     if streamLength[0] >= n:
         return
@@ -91,14 +73,18 @@ def process_batch(time, batch):
 
     batch = batch.collect()
     # Update the streaming state
-    exactStep(batch)
     for item in batch:
+        t += 1
+        if t > n:
+            break
+        exactStep(item)
         reservoirSamplingStep(item)
         stickySamplingStep(item, n, phi, epsilon, delta)
 
     if streamLength[0] >= n:
         stopping_condition.set()
         #print('received:',batch[:n])
+        #print(t)
 
 def compute_print_exact(S_exact):
     # The size of the data structure used to compute the true frequent items
