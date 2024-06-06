@@ -4,6 +4,7 @@ from pyspark import StorageLevel
 import threading
 import sys
 import numpy as np
+import math
 
 
 # All 3 method: all items after the n-th one should be ignored
@@ -31,7 +32,7 @@ def exactStep(item):
 
 def reservoirSamplingStep(item):
     global phi, S_reservoir, t
-    m = 1 / phi
+    m = math.ceil(1 / phi)
     if t <= m:
         S_reservoir.append(item)
     else:
@@ -68,8 +69,8 @@ def process_batch(time, batch):
     streamLength[0] += batch_size
 
     # If we wanted, here we could run some additional code on the global histogram
-    if batch_size > 0:
-        print("Batch size at time [{0}] is: {1}".format(time, batch_size))
+    # if batch_size > 0:
+    #     print("Batch size at time [{0}] is: {1}".format(time, batch_size))
 
     batch = batch.collect()
     # Update the streaming state
@@ -86,13 +87,14 @@ def process_batch(time, batch):
         #print('received:',batch[:n])
         #print(t)
 
-def compute_print_exact(S_exact):
+def compute_print_exact(S_exact, S):
     # The size of the data structure used to compute the true frequent items
     # The number of true frequent items
     # The true frequent items, in increasing order (one item per line)
-    print("Data structure size:", len(S_exact)) # TODO understand what first point means
-    print("Exact frequent items length:", len(S_exact))
-    print("Exact frequent items:")
+    print("EXACT ALGORITHM")
+    print("Number of items in the data structure =", len(S)) # TODO understand what first point means
+    print("Number of true frequent items =", len(S_exact))
+    print("True frequent items:")
     for k in S_exact:
         print(k)
 
@@ -101,11 +103,12 @@ def compute_print_reservoir(S_reservoir, S_exact):
     # The size m of the Reservoir sample
     # The number of estimated frequent items (i.e., distinct items in the sample)
     # The estimated frequent items, in increasing order (one item per line). Next to each item print a "+" if the item is a true freuent one, and "-" otherwise.
-    print("Reservoir sampling length:", len(S_reservoir))
     global sc
+    print("RESERVOIR SAMPLING")
+    print("Size m of the sample =", len(S_reservoir))
     S_reservoir = sc.parallelize(S_reservoir).map(lambda x: (x, 1)).reduceByKey(lambda i1, i2: i1 + i2).collectAsMap()  # distinct items
-    print("Number of approximate frequent items:", len(S_reservoir))
-    print("Reservoir sampling:")
+    print("Number of estimated frequent items =", len(S_reservoir))
+    print("Estimated frequent items:")
     for k in sorted(S_reservoir.keys()):
         if k in S_exact:
             print(k, '+')
@@ -117,10 +120,11 @@ def compute_print_sticky(S_sticky, S_exact):
     # The size of the Hash Table
     # The number of estimated frequent items (i.e., the items considered frequent by Sticky sampling)
     # The estimated frequent items, in increasing order (one item per line). Next to each item print a "+" if the item is a true freuent one, and "-" otherwise.
-    print("Sticky sampling length:", len(S_sticky))
+    print("STICKY SAMPLING")
+    print("Number of items in the Hash Table =", len(S_sticky))
     S_sticky_frequent = {k: v for k, v in sorted(S_sticky.items()) if v >= (phi - epsilon) * n}
-    print("Number of approximate frequent items:", len(S_sticky_frequent))
-    print("Sticky sampling epsilon-approximate frequent items:")
+    print("Number of estimated frequent items =", len(S_sticky_frequent))
+    print("Estimated frequent items:")
     for k in S_sticky_frequent.keys():
         if k in S_exact:
             print(k, '+')
@@ -173,29 +177,27 @@ def main():
     # that the same data might be processed multiple times in case of failure.
     stream.foreachRDD(lambda time, batch: process_batch(time, batch))
     # MANAGING STREAMING SPARK CONTEXT
-    print("Starting streaming engine")
+    #print("Starting streaming engine")
     ssc.start()
-    print("Waiting for shutdown condition")
+    #print("Waiting for shutdown condition")
     stopping_condition.wait()
-    print("Stopping the streaming engine")
+    #print("Stopping the streaming engine")
     # NOTE: You will see some data being processed even after the
     # shutdown command has been issued: This is because we are asking
     # to stop "gracefully", meaning that any outstanding work
     # will be done.
     ssc.stop(False, True)
-    print("Streaming engine stopped")
+    #print("Streaming engine stopped")
+    print('INPUT PROPERTIES')
+    print('n =', n, 'phi =', phi, 'epsilon =', epsilon,'delta =', delta, 'port =', portExp)
 
     # COMPUTE AND PRINT FINAL STATISTICS
     for k in sorted(S.keys()):
         if S[k] >= n * phi:
             S_exact[k] = S[k]
-    compute_print_exact(S_exact)
+    compute_print_exact(S_exact, S)
     compute_print_reservoir(S_reservoir, S_exact)
     compute_print_sticky(S_sticky, S_exact)
-
-    # print("Number of items processed =", streamLength[0])
-    # print("Number of distinct items =", len(S_exact))
-    # print("Largest item =", max(S_exact.keys()))
 
 
 if __name__ == '__main__':
