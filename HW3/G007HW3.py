@@ -17,7 +17,7 @@ delta: float = -1
 # DEFINING THE REQUIRED DATA STRUCTURES TO MAINTAIN THE STATE OF THE STREAM
 # &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 t = 0  # number of item processed
-stream_length = 0  # Stream length
+# stream_length = 0  # Stream length
 S_exact = {}
 S_reservoir = []
 S_sticky = {}  # Hash Table
@@ -57,7 +57,7 @@ def stickySamplingStep(S_sticky, item, n, phi, epsilon, delta):
 def process_batch(time, batch):
     # We are working on the batch at time `time`.
     global stopping_condition
-    global stream_length
+    # global stream_length
     global S_exact, S_reservoir, S_sticky
     global t, n, phi, epsilon, delta
     batch_size = batch.count()
@@ -66,13 +66,13 @@ def process_batch(time, batch):
         return
 
     batch = batch.map(lambda s: int(s))
-    stream_length += batch_size
+    # stream_length += batch_size
 
     # If we wanted, here we could run some additional code on the global histogram
-    if batch_size > 0:
-        print("Batch size at time [{0}] is: {1}".format(time, batch_size))
-        print("stream_length: {0}, t: {1}".format(stream_length, t))
-        print("Hash tables sizes: EXACT={0}, RESERVOIR={1}, STICKY={2}".format(len(S_exact), len(S_reservoir), len(S_sticky)))
+    # if batch_size > 0:
+    #     print("Batch size at time [{0}] is: {1}".format(time, batch_size))
+    #     print("stream_length: {0}, t: {1}".format(stream_length, t))
+    #     print("Hash tables sizes: EXACT={0}, RESERVOIR={1}, STICKY={2}".format(len(S_exact), len(S_reservoir), len(S_sticky)))
 
     batch = batch.collect()
     # Update the streaming state
@@ -145,7 +145,7 @@ def compute_print_sticky(S_sticky, S_exact):
 
 def main():
     global sc, stopping_condition
-    global stream_length
+    # global stream_length
     global t, n, phi, epsilon, delta
     global S_exact, S_reservoir, S_sticky
 
@@ -204,7 +204,9 @@ def main():
     # will be done.
     ssc.stop(False, True)
     # print("Streaming engine stopped")
-    print("Final stream length: {0}, t: {1}, computed elements: {2}".format(stream_length, t, sum(S_exact.values())))
+
+    # print("Final stream length: {0}, t: {1}, computed elements: {2}".format(stream_length, t, sum(S_exact.values())))
+
     print('INPUT PROPERTIES')
     print('n =', n, 'phi =', phi, 'epsilon =', epsilon, 'delta =', delta, 'port =', portExp)
 
