@@ -161,6 +161,8 @@ cython_debug/
 
 **/.DS_Store
 .idea/
+
+# Too big input datasets
 HW2/artificial50M_9_100.csv
 HW2/artificial20M_9_100.csv
 HW2/artificial10M_9_100.csv

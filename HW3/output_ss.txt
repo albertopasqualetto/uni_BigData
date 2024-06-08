@@ -1,0 +1,595 @@
+epsilon: 0.06
+i: 1
+INPUT PROPERTIES
+n = 1000000 phi = 0.07 epsilon = 0.06 delta = 0.1 port = 8888
+EXACT ALGORITHM
+Number of items in the data structure = 39886
+Number of true frequent items = 10
+True frequent items:
+195773912
+339323283
+434415286
+641486445
+819911327
+870070186
+1472610405
+1590293530
+1690049656
+1936875793
+RESERVOIR SAMPLING
+Size m of the sample = 15
+Number of estimated frequent items = 11
+Estimated frequent items:
+195773912 +
+339323283 +
+434415286 +
+632507218 -
+637121204 -
+819911327 +
+870070186 +
+978604355 -
+1690049656 +
+1936875793 +
+1957024653 -
+STICKY SAMPLING
+Number of items in the Hash Table = 16
+Number of estimated frequent items = 14
+Estimated frequent items:
+14673339 -
+195773912 +
+339323283 +
+434415286 +
+632507218 -
+637121204 -
+641486445 +
+819911327 +
+870070186 +
+978604355 -
+1472610405 +
+1590293530 +
+1690049656 +
+1936875793 +
+
+i: 2
+INPUT PROPERTIES
+n = 1000000 phi = 0.07 epsilon = 0.06 delta = 0.1 port = 8888
+EXACT ALGORITHM
+Number of items in the data structure = 39886
+Number of true frequent items = 10
+True frequent items:
+195773912
+339323283
+434415286
+641486445
+819911327
+870070186
+1472610405
+1590293530
+1690049656
+1936875793
+RESERVOIR SAMPLING
+Size m of the sample = 15
+Number of estimated frequent items = 11
+Estimated frequent items:
+14673339 -
+195773912 +
+339323283 +
+637121204 -
+641486445 +
+819911327 +
+870070186 +
+978604355 -
+1590293530 +
+1690049656 +
+1936875793 +
+STICKY SAMPLING
+Number of items in the Hash Table = 20
+Number of estimated frequent items = 13
+Estimated frequent items:
+195773912 +
+339323283 +
+434415286 +
+632507218 -
+637121204 -
+641486445 +
+819911327 +
+870070186 +
+978604355 -
+1472610405 +
+1590293530 +
+1690049656 +
+1936875793 +
+
+i: 3
+INPUT PROPERTIES
+n = 1000000 phi = 0.07 epsilon = 0.06 delta = 0.1 port = 8888
+EXACT ALGORITHM
+Number of items in the data structure = 39886
+Number of true frequent items = 10
+True frequent items:
+195773912
+339323283
+434415286
+641486445
+819911327
+870070186
+1472610405
+1590293530
+1690049656
+1936875793
+RESERVOIR SAMPLING
+Size m of the sample = 15
+Number of estimated frequent items = 11
+Estimated frequent items:
+195773912 +
+339323283 +
+434415286 +
+632507218 -
+637121204 -
+819911327 +
+870070186 +
+978604355 -
+1690049656 +
+1936875793 +
+1957024653 -
+STICKY SAMPLING
+Number of items in the Hash Table = 17
+Number of estimated frequent items = 14
+Estimated frequent items:
+14673339 -
+195773912 +
+339323283 +
+434415286 +
+632507218 -
+637121204 -
+641486445 +
+819911327 +
+870070186 +
+978604355 -
+1472610405 +
+1590293530 +
+1690049656 +
+1936875793 +
+
+--------------------------------------------------------------
+epsilon: 0.05
+i: 1
+INPUT PROPERTIES
+n = 1000000 phi = 0.07 epsilon = 0.05 delta = 0.1 port = 8888
+EXACT ALGORITHM
+Number of items in the data structure = 39886
+Number of true frequent items = 10
+True frequent items:
+195773912
+339323283
+434415286
+641486445
+819911327
+870070186
+1472610405
+1590293530
+1690049656
+1936875793
+RESERVOIR SAMPLING
+Size m of the sample = 15
+Number of estimated frequent items = 9
+Estimated frequent items:
+195773912 +
+339323283 +
+434415286 +
+632507218 -
+637121204 -
+819911327 +
+870070186 +
+1590293530 +
+1936875793 +
+STICKY SAMPLING
+Number of items in the Hash Table = 22
+Number of estimated frequent items = 13
+Estimated frequent items:
+195773912 +
+339323283 +
+434415286 +
+632507218 -
+637121204 -
+641486445 +
+819911327 +
+870070186 +
+978604355 -
+1472610405 +
+1590293530 +
+1690049656 +
+1936875793 +
+
+i: 2
+INPUT PROPERTIES
+n = 1000000 phi = 0.07 epsilon = 0.05 delta = 0.1 port = 8888
+EXACT ALGORITHM
+Number of items in the data structure = 39886
+Number of true frequent items = 10
+True frequent items:
+195773912
+339323283
+434415286
+641486445
+819911327
+870070186
+1472610405
+1590293530
+1690049656
+1936875793
+RESERVOIR SAMPLING
+Size m of the sample = 15
+Number of estimated frequent items = 9
+Estimated frequent items:
+195773912 +
+339323283 +
+632507218 -
+637121204 -
+819911327 +
+870070186 +
+1590293530 +
+1690049656 +
+1936875793 +
+STICKY SAMPLING
+Number of items in the Hash Table = 17
+Number of estimated frequent items = 14
+Estimated frequent items:
+14673339 -
+195773912 +
+339323283 +
+434415286 +
+632507218 -
+637121204 -
+641486445 +
+819911327 +
+870070186 +
+978604355 -
+1472610405 +
+1590293530 +
+1690049656 +
+1936875793 +
+
+i: 3
+INPUT PROPERTIES
+n = 1000000 phi = 0.07 epsilon = 0.05 delta = 0.1 port = 8888
+EXACT ALGORITHM
+Number of items in the data structure = 39886
+Number of true frequent items = 10
+True frequent items:
+195773912
+339323283
+434415286
+641486445
+819911327
+870070186
+1472610405
+1590293530
+1690049656
+1936875793
+RESERVOIR SAMPLING
+Size m of the sample = 15
+Number of estimated frequent items = 10
+Estimated frequent items:
+339323283 +
+434415286 +
+632507218 -
+637121204 -
+641486445 +
+819911327 +
+870070186 +
+978604355 -
+1936875793 +
+1957024653 -
+STICKY SAMPLING
+Number of items in the Hash Table = 21
+Number of estimated frequent items = 14
+Estimated frequent items:
+14673339 -
+195773912 +
+339323283 +
+434415286 +
+632507218 -
+637121204 -
+641486445 +
+819911327 +
+870070186 +
+978604355 -
+1472610405 +
+1590293530 +
+1690049656 +
+1936875793 +
+
+--------------------------------------------------------------
+epsilon: 0.04
+i: 1
+INPUT PROPERTIES
+n = 1000000 phi = 0.07 epsilon = 0.04 delta = 0.1 port = 8888
+EXACT ALGORITHM
+Number of items in the data structure = 39886
+Number of true frequent items = 10
+True frequent items:
+195773912
+339323283
+434415286
+641486445
+819911327
+870070186
+1472610405
+1590293530
+1690049656
+1936875793
+RESERVOIR SAMPLING
+Size m of the sample = 15
+Number of estimated frequent items = 10
+Estimated frequent items:
+195773912 +
+339323283 +
+632507218 -
+637121204 -
+819911327 +
+870070186 +
+978604355 -
+1690049656 +
+1936875793 +
+1957024653 -
+STICKY SAMPLING
+Number of items in the Hash Table = 16
+Number of estimated frequent items = 12
+Estimated frequent items:
+195773912 +
+339323283 +
+434415286 +
+632507218 -
+641486445 +
+819911327 +
+870070186 +
+978604355 -
+1472610405 +
+1590293530 +
+1690049656 +
+1936875793 +
+
+i: 2
+INPUT PROPERTIES
+n = 1000000 phi = 0.07 epsilon = 0.04 delta = 0.1 port = 8888
+EXACT ALGORITHM
+Number of items in the data structure = 39886
+Number of true frequent items = 10
+True frequent items:
+195773912
+339323283
+434415286
+641486445
+819911327
+870070186
+1472610405
+1590293530
+1690049656
+1936875793
+RESERVOIR SAMPLING
+Size m of the sample = 15
+Number of estimated frequent items = 10
+Estimated frequent items:
+339323283 +
+434415286 +
+632507218 -
+637121204 -
+819911327 +
+870070186 +
+978604355 -
+1690049656 +
+1936875793 +
+1957024653 -
+STICKY SAMPLING
+Number of items in the Hash Table = 20
+Number of estimated frequent items = 14
+Estimated frequent items:
+14673339 -
+195773912 +
+339323283 +
+434415286 +
+632507218 -
+637121204 -
+641486445 +
+819911327 +
+870070186 +
+978604355 -
+1472610405 +
+1590293530 +
+1690049656 +
+1936875793 +
+
+i: 3
+INPUT PROPERTIES
+n = 1000000 phi = 0.07 epsilon = 0.04 delta = 0.1 port = 8888
+EXACT ALGORITHM
+Number of items in the data structure = 39886
+Number of true frequent items = 10
+True frequent items:
+195773912
+339323283
+434415286
+641486445
+819911327
+870070186
+1472610405
+1590293530
+1690049656
+1936875793
+RESERVOIR SAMPLING
+Size m of the sample = 15
+Number of estimated frequent items = 11
+Estimated frequent items:
+14673339 -
+339323283 +
+632507218 -
+637121204 -
+819911327 +
+870070186 +
+978604355 -
+1590293530 +
+1690049656 +
+1936875793 +
+1957024653 -
+STICKY SAMPLING
+Number of items in the Hash Table = 22
+Number of estimated frequent items = 13
+Estimated frequent items:
+14673339 -
+195773912 +
+339323283 +
+434415286 +
+632507218 -
+637121204 -
+641486445 +
+819911327 +
+870070186 +
+1472610405 +
+1590293530 +
+1690049656 +
+1936875793 +
+
+--------------------------------------------------------------
+epsilon: 0.03
+i: 1
+INPUT PROPERTIES
+n = 1000000 phi = 0.07 epsilon = 0.03 delta = 0.1 port = 8888
+EXACT ALGORITHM
+Number of items in the data structure = 39886
+Number of true frequent items = 10
+True frequent items:
+195773912
+339323283
+434415286
+641486445
+819911327
+870070186
+1472610405
+1590293530
+1690049656
+1936875793
+RESERVOIR SAMPLING
+Size m of the sample = 15
+Number of estimated frequent items = 10
+Estimated frequent items:
+195773912 +
+339323283 +
+632507218 -
+637121204 -
+819911327 +
+870070186 +
+978604355 -
+1590293530 +
+1690049656 +
+1936875793 +
+STICKY SAMPLING
+Number of items in the Hash Table = 17
+Number of estimated frequent items = 10
+Estimated frequent items:
+195773912 +
+339323283 +
+434415286 +
+641486445 +
+819911327 +
+870070186 +
+1472610405 +
+1590293530 +
+1690049656 +
+1936875793 +
+
+i: 2
+INPUT PROPERTIES
+n = 1000000 phi = 0.07 epsilon = 0.03 delta = 0.1 port = 8888
+EXACT ALGORITHM
+Number of items in the data structure = 39886
+Number of true frequent items = 10
+True frequent items:
+195773912
+339323283
+434415286
+641486445
+819911327
+870070186
+1472610405
+1590293530
+1690049656
+1936875793
+RESERVOIR SAMPLING
+Size m of the sample = 15
+Number of estimated frequent items = 11
+Estimated frequent items:
+195773912 +
+339323283 +
+434415286 +
+632507218 -
+637121204 -
+641486445 +
+819911327 +
+870070186 +
+1590293530 +
+1936875793 +
+1957024653 -
+STICKY SAMPLING
+Number of items in the Hash Table = 18
+Number of estimated frequent items = 10
+Estimated frequent items:
+195773912 +
+339323283 +
+434415286 +
+641486445 +
+819911327 +
+870070186 +
+1472610405 +
+1590293530 +
+1690049656 +
+1936875793 +
+
+i: 3
+INPUT PROPERTIES
+n = 1000000 phi = 0.07 epsilon = 0.03 delta = 0.1 port = 8888
+EXACT ALGORITHM
+Number of items in the data structure = 39886
+Number of true frequent items = 10
+True frequent items:
+195773912
+339323283
+434415286
+641486445
+819911327
+870070186
+1472610405
+1590293530
+1690049656
+1936875793
+RESERVOIR SAMPLING
+Size m of the sample = 15
+Number of estimated frequent items = 11
+Estimated frequent items:
+339323283 +
+434415286 +
+637121204 -
+641486445 +
+819911327 +
+870070186 +
+978604355 -
+1472610405 +
+1590293530 +
+1690049656 +
+1936875793 +
+STICKY SAMPLING
+Number of items in the Hash Table = 22
+Number of estimated frequent items = 10
+Estimated frequent items:
+195773912 +
+339323283 +
+434415286 +
+641486445 +
+819911327 +
+870070186 +
+1472610405 +
+1590293530 +
+1690049656 +
+1936875793 +
+
+--------------------------------------------------------------
