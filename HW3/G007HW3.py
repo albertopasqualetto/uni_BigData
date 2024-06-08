@@ -62,7 +62,7 @@ def process_batch(time, batch):
     global t, n, phi, epsilon, delta
     batch_size = batch.count()
     # If we already have enough points (> n), skip this batch.
-    if t >= n:
+    if t > n:
         return
 
     batch = batch.map(lambda s: int(s))
