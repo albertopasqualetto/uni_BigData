@@ -84,7 +84,7 @@ def process_batch(time, batch):
         reservoirSamplingStep(S_reservoir, item, t, phi)
         stickySamplingStep(S_sticky, item, n, phi, epsilon, delta)
 
-    if t >= n:
+    if t > n:
         stopping_condition.set()
         # print('received:',batch[:n])
         # print(t)
@@ -204,7 +204,7 @@ def main():
     # will be done.
     ssc.stop(False, True)
     # print("Streaming engine stopped")
-    print("Final stream length: {0}, t: {1}".format(stream_length, t))
+    print("Final stream length: {0}, t: {1}, computed elements: {2}".format(stream_length, t, sum(S_exact.values())))
     print('INPUT PROPERTIES')
     print('n =', n, 'phi =', phi, 'epsilon =', epsilon, 'delta =', delta, 'port =', portExp)
 
