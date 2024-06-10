@@ -24,6 +24,7 @@ S_sticky = {}  # Hash Table
 
 
 def exactStep(S_exact, item):
+    # update the data structure responsible of computing the exact frequent items
     if item in S_exact.keys():
         S_exact[item] = S_exact[item] + 1
     else:
@@ -31,6 +32,7 @@ def exactStep(S_exact, item):
 
 
 def reservoirSamplingStep(S_reservoir, item, t, phi):
+    # update the data structure responsible of maintaining the m-sample through reservoir sampling
     m = np.ceil(1 / phi)
     if t <= m:
         S_reservoir.append(item)
@@ -43,6 +45,7 @@ def reservoirSamplingStep(S_reservoir, item, t, phi):
 
 
 def stickySamplingStep(S_sticky, item, n, phi, epsilon, delta):
+    # update the data structure according to the sticky sampling
     r = np.log(1/(delta*phi)) / epsilon
     p = r/n
     if item in S_sticky:
@@ -57,7 +60,6 @@ def stickySamplingStep(S_sticky, item, n, phi, epsilon, delta):
 def process_batch(time, batch):
     # We are working on the batch at time `time`.
     global stopping_condition
-    # global stream_length
     global S_exact, S_reservoir, S_sticky
     global t, n, phi, epsilon, delta
     batch_size = batch.count()
@@ -66,16 +68,14 @@ def process_batch(time, batch):
         return
 
     batch = batch.map(lambda s: int(s))
-    # stream_length += batch_size
 
-    # If we wanted, here we could run some additional code on the global histogram
     # if batch_size > 0:
     #     print("Batch size at time [{0}] is: {1}".format(time, batch_size))
     #     print("stream_length: {0}, t: {1}".format(stream_length, t))
     #     print("Hash tables sizes: EXACT={0}, RESERVOIR={1}, STICKY={2}".format(len(S_exact), len(S_reservoir), len(S_sticky)))
 
     batch = batch.collect()
-    # Update the streaming state
+    # Update the data structures
     for item in batch:
         t += 1
         if t > n:   # All 3 methods: all items after the n-th one should be ignored
@@ -91,6 +91,7 @@ def process_batch(time, batch):
 
 
 def threshold_S(S, n, phi):
+    # compute the exact frequent item starting from the dictionary S
     S_thresholded = {}
     for k in S.keys():
         if S[k] >= n * phi:
@@ -145,7 +146,6 @@ def compute_print_sticky(S_sticky, S_exact):
 
 def main():
     global sc, stopping_condition
-    # global stream_length
     global t, n, phi, epsilon, delta
     global S_exact, S_reservoir, S_sticky
 
