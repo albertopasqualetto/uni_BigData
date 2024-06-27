@@ -38,7 +38,7 @@ def reservoirSamplingStep(S_reservoir, item, t, phi):
         S_reservoir.append(item)
     else:
         x = np.random.uniform() # Random number in [0,1]
-        p = np.ceil(m / t)
+        p = m / t
         if x <= p:
             S_reservoir.pop(np.random.randint(0, m))
             S_reservoir.append(item)
